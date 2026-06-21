@@ -222,13 +222,17 @@ for(const [l,ws] of Object.entries(VOCAB_BY_LESSON)){
   for(const w of ws){ const k=norm(w); VOCAB.add(k); WORD_LESSON[k]=l; }
 }
 
-// ==================== SPEECH RECOGNITION ====================
+// ==================== SPEECH RECOGNITION (MAX SENSITIVITY) ====================
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null;
 let listening = false;
-let sentenceParts = [];    // accumulated final parts for current sentence
-let silenceTimer = null;   // auto-finalize after silence
-const SILENCE_DELAY = 2000; // 2s silence = end of sentence
+let sentenceParts = [];
+let silenceTimer = null;
+let keepAliveTimer = null;
+let restartCount = 0;
+const SILENCE_DELAY = 2800;  // 2.8s silence → auto-finalize
+const KEEPALIVE_MS = 8000;   // Check every 8s if recognition is alive
+const RESTART_COOLDOWN = 50; // ms between restart attempts
 
 // DOM
 const liveBox = document.getElementById('liveBox');
@@ -243,23 +247,25 @@ const editArea = document.getElementById('editArea');
 const editText = document.getElementById('editText');
 const historyList = document.getElementById('historyList');
 
-// ==================== INIT RECOGNITION ====================
+// ==================== RECOGNITION ENGINE ====================
 function createRecognition(){
   const r = new SR();
   r.lang = 'es-ES';
   r.interimResults = true;
-  r.continuous = false;     // false works better on iOS Safari
+  r.continuous = false;     // iOS Safari: false = more reliable restart
   r.maxAlternatives = 1;
   return r;
 }
 
 function bindEvents(r){
   r.onresult = e => {
+    restartCount = 0; // got result → connected and working
     let interim = '';
     for(let i=e.resultIndex; i<e.results.length; i++){
       const res = e.results[i];
       if(res.isFinal){
-        sentenceParts.push(res[0].transcript.trim());
+        const t = res[0].transcript.trim();
+        if(t) sentenceParts.push(t);
       } else {
         interim += res[0].transcript;
       }
@@ -269,45 +275,102 @@ function bindEvents(r){
   };
 
   r.onerror = e => {
-    console.log('SR error:', e.error);
-    if(e.error==='no-speech'){
-      // Just silence — keep listening if we're still supposed to be listening
-      if(listening) resetSilenceTimer();
+    const err = e.error;
+    if(err==='no-speech' || err==='aborted'){
+      // Common on iOS — just restart
       return;
     }
-    if(e.error==='aborted') return;
-    if(e.error==='not-allowed'){
+    if(err==='not-allowed'){
       statusText.textContent = 'Micrófono denegado. Ajustes → Safari → Micrófono';
       setStatus('idle');
       return;
     }
-    if(e.error==='network'){
-      statusText.textContent = 'Error de red. Verifica conexión.';
+    if(err==='network' || err==='service-not-allowed'){
+      statusText.textContent = 'Error de red. Verifica conexión y VPN.';
       setStatus('idle');
       return;
     }
   };
 
+  // These events fire on actual speech start/end — use for visual feedback
+  r.onspeechstart = () => {
+    setStatus('listen');
+    statusText.textContent = 'Te escucho...';
+  };
+  r.onspeechend = () => {
+    // Speech pause detected — reset silence timer but keep listening
+    resetSilenceTimer();
+  };
+
+  r.onaudiostart = () => {
+    setStatus('listen');
+    statusText.textContent = 'Escuchando...';
+  };
+
   r.onend = () => {
-    // On iOS, recognition auto-stops after ~30s or after silence
-    // We need to restart quickly to maintain continuous listening
+    // Recognition session ended — restart IMMEDIATELY if still listening
     if(listening){
-      // Small delay to avoid race conditions on Safari
-      setTimeout(() => {
-        if(listening && rec){
-          try { rec.start(); } catch(ex){
-            // If start fails, recreate
-            rec = createRecognition();
-            bindEvents(rec);
-            try { rec.start(); } catch(ex2){}
-          }
-        }
-      }, 80);
+      attemptRestart();
     }
   };
 
-  r.onaudiostart = () => setStatus('listen');
-  r.onaudioend = () => { if(listening) setStatus('listen'); };
+  r.onstart = () => {
+    // Successfully started — update UI
+  };
+}
+
+function attemptRestart(){
+  if(!listening) return;
+  clearTimeout(keepAliveTimer);
+
+  // Try restarting immediately
+  const tryStart = () => {
+    if(!listening) return;
+    try {
+      rec.start();
+      restartCount = 0;
+      scheduleKeepAlive();
+    } catch(ex){
+      restartCount++;
+      // Recreate if too many failures or if the object is in a bad state
+      if(restartCount > 3 || ex.name === 'InvalidStateError'){
+        rec = createRecognition();
+        bindEvents(rec);
+        try {
+          rec.start();
+          restartCount = 0;
+          scheduleKeepAlive();
+        } catch(ex2){
+          // Keep trying with backoff
+          if(listening && restartCount < 10){
+            const delay = Math.min(RESTART_COOLDOWN * restartCount, 500);
+            setTimeout(tryStart, delay);
+          }
+        }
+      } else {
+        // Retry with small backoff
+        if(listening){
+          const delay = Math.min(RESTART_COOLDOWN * restartCount, 300);
+          setTimeout(tryStart, delay);
+        }
+      }
+    }
+  };
+
+  // Staggered start to avoid iOS race conditions
+  setTimeout(tryStart, RESTART_COOLDOWN);
+}
+
+function scheduleKeepAlive(){
+  clearTimeout(keepAliveTimer);
+  if(!listening) return;
+  keepAliveTimer = setTimeout(() => {
+    if(listening){
+      // Force restart recognition to keep it fresh
+      try { rec.stop(); } catch(e){}
+      // onend will handle restart via attemptRestart
+    }
+  }, KEEPALIVE_MS);
 }
 
 // ==================== LISTENING CONTROL ====================
@@ -323,10 +386,25 @@ function startListening(){
   }
   listening = true;
   sentenceParts = [];
+  restartCount = 0;
+  lastPunctuated = '';
+
+  // Pre-warm: create + start to establish server connection
   rec = createRecognition();
   bindEvents(rec);
-  try { rec.start(); } catch(e){ rec = createRecognition(); bindEvents(rec); rec.start(); }
+  try { rec.start(); } catch(e){
+    // If first start fails (sometimes on iOS), retry
+    rec = createRecognition();
+    bindEvents(rec);
+    try { rec.start(); } catch(e2){
+      statusText.textContent = 'Error al iniciar. Reintenta.';
+      listening = false;
+      updateUIForIdle();
+      return;
+    }
+  }
 
+  scheduleKeepAlive();
   updateUIForListening();
   resetSilenceTimer();
   setStatus('listen');
@@ -336,14 +414,15 @@ function startListening(){
 function stopListening(){
   listening = false;
   clearTimeout(silenceTimer);
+  clearTimeout(keepAliveTimer);
   try { rec.stop(); } catch(e){}
+  try { rec.abort(); } catch(e){} // Force-stop on iOS
 
-  // Save current sentence if any
   finalizeAndSave();
-
   updateUIForIdle();
   setStatus('idle');
   statusText.textContent = 'Listo';
+  restartCount = 0;
 }
 
 function finalizeSentence(){
