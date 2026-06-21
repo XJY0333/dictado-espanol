@@ -2,165 +2,131 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>Dictado Español — 西班牙语听写</title>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Dictado Español</title>
 <style>
 :root {
-  --blue: #2563eb;
-  --green: #16a34a;
-  --red: #dc2626;
-  --bg: #f8fafc;
-  --card: #ffffff;
-  --text: #1e293b;
-  --sub: #64748b;
-  --border: #e2e8f0;
-  --shadow: 0 4px 24px rgba(0,0,0,.06);
-  --radius: 16px;
+  --blue:#2563eb; --green:#16a34a; --red:#dc2626; --amber:#d97706;
+  --bg:#f1f5f9; --card:#fff; --text:#0f172a; --sub:#64748b;
+  --border:#e2e8f0; --radius:18px;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 17px; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  min-height: 100dvh;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-  display: flex;
-  flex-direction: column;
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:17px}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--bg); color:var(--text);
+  min-height:100vh; min-height:100dvh;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  display:flex; flex-direction:column;
+  -webkit-user-select:none; user-select:none;
 }
 
-/* Header */
-header {
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  position: sticky; top: 0; z-index: 10;
+header{
+  background:var(--card); border-bottom:1px solid var(--border);
+  padding:14px 18px; display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:10;
 }
-header h1 { font-size: 1.15rem; font-weight: 700; }
-header .badge {
-  background: var(--green); color: #fff;
-  font-size: .7rem; padding: 4px 10px; border-radius: 99px;
-  font-weight: 600; white-space: nowrap;
-}
-
-/* Controls */
-.controls {
-  display: flex; gap: 10px; padding: 16px;
-  justify-content: center; flex-wrap: wrap;
-}
-.btn {
-  border: none; border-radius: 99px; padding: 14px 28px;
-  font-size: 1rem; font-weight: 600; cursor: pointer;
-  display: flex; align-items: center; gap: 8px;
-  transition: all .15s; min-height: 48px;
-  -webkit-tap-highlight-color: transparent;
-}
-.btn:active { transform: scale(.96); }
-.btn-start { background: var(--blue); color: #fff; }
-.btn-stop  { background: var(--red);  color: #fff; }
-.btn-clear { background: var(--border); color: var(--text); }
-.btn-vocab { background: var(--border); color: var(--text); }
-.btn:disabled { opacity: .45; pointer-events: none; }
+header h1{font-size:1.2rem; font-weight:700; letter-spacing:-.3px}
+header .badge{background:var(--green); color:#fff; font-size:.7rem; padding:5px 12px; border-radius:99px; font-weight:600}
 
 /* Status */
-.status-bar {
-  text-align: center; font-size: .85rem; color: var(--sub);
-  padding: 0 16px; min-height: 24px;
-}
-.status-bar .dot {
-  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
-  margin-right: 6px; vertical-align: middle;
-}
-.dot.idle { background: #94a3b8; }
-.dot.listen { background: #ef4444; animation: pulse .8s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.status-row{display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 16px 0}
+.status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0; transition:background .3s}
+.status-dot.idle{background:#94a3b8}
+.status-dot.listen{background:#ef4444;animation:blink .7s infinite}
+.status-dot.saving{background:var(--amber)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.status-txt{font-size:.82rem;color:var(--sub)}
+.sentence-count{font-size:.75rem;color:var(--blue);font-weight:600;margin-left:auto}
 
-/* Live display */
-.live-section { padding: 12px 16px; }
-.live-box {
-  background: var(--card); border: 2px solid var(--border);
-  border-radius: var(--radius); padding: 20px 24px;
-  min-height: 80px; font-size: 1.4rem; line-height: 1.5;
-  word-break: break-word; transition: border-color .2s;
+/* Controls */
+.ctrls{display:flex;gap:10px;padding:12px 16px;justify-content:center;flex-wrap:wrap}
+.btn{
+  border:none;border-radius:99px;padding:13px 24px;font-size:.95rem;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s;
+  min-height:46px;-webkit-tap-highlight-color:transparent;
 }
-.live-box.active { border-color: var(--blue); }
-.live-box .interim { color: var(--sub); }
-.live-box .confirmed { color: var(--text); }
-.live-box .vocab-match { color: var(--green); font-weight: 600; }
-.live-box .placeholder { color: #cbd5e1; font-style: italic; }
+.btn:active{transform:scale(.95)}
+.btn-rec{background:var(--red);color:#fff;box-shadow:0 4px 14px rgba(220,38,38,.3)}
+.btn-rec.paused{background:var(--blue);box-shadow:0 4px 14px rgba(37,99,235,.3);animation:glow 1.5s infinite}
+@keyframes glow{0%,100%{box-shadow:0 4px 14px rgba(37,99,235,.3)}50%{box-shadow:0 4px 28px rgba(37,99,235,.55)}}
+.btn-final{background:var(--amber);color:#fff;box-shadow:0 4px 14px rgba(217,119,6,.25)}
+.btn-icon{background:var(--border);color:var(--text);padding:13px 18px}
+.btn:disabled{opacity:.4;pointer-events:none}
+.btn svg{flex-shrink:0}
+
+/* Live area */
+.live-area{padding:8px 16px;flex:1;display:flex;flex-direction:column}
+.live-box{
+  background:var(--card);border:2.5px solid var(--border);border-radius:var(--radius);
+  padding:22px 20px;min-height:100px;font-size:1.35rem;line-height:1.55;
+  word-break:break-word;transition:border-color .25s;position:relative;
+  display:flex;align-items:center;
+}
+.live-box.active{border-color:var(--red);box-shadow:0 0 0 4px rgba(220,38,38,.06)}
+.live-box .content{width:100%}
+.live-box .interim{color:var(--sub);font-style:italic}
+.live-box .sentence{color:var(--text)}
+.live-box .vocab{color:var(--green);font-weight:650}
+.live-box .placeholder{color:#cbd5e1;font-style:italic;text-align:center;width:100%}
+.live-box .edit-hint{position:absolute;top:8px;right:12px;font-size:.65rem;color:var(--sub);opacity:0;transition:opacity .3s}
+.live-box:hover .edit-hint{opacity:1}
+
+/* Edit overlay */
+.edit-area{display:none;padding:8px 16px}
+.edit-area.show{display:block}
+.edit-area textarea{
+  width:100%;min-height:80px;border:2px solid var(--blue);border-radius:var(--radius);
+  padding:14px;font-size:1.2rem;font-family:inherit;resize:vertical;
+}
+.edit-actions{display:flex;gap:8px;margin-top:8px;justify-content:flex-end}
 
 /* History */
-.history-section { padding: 0 16px 16px; flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-.history-section h3 { font-size: .9rem; color: var(--sub); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .5px; }
-.history-list {
-  flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
-  max-height: 280px; -webkit-overflow-scrolling: touch;
+.hist-section{padding:0 16px 14px}
+.hist-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.hist-header h3{font-size:.82rem;color:var(--sub);text-transform:uppercase;letter-spacing:.5px}
+.hist-header .export-btn{font-size:.75rem;color:var(--blue);background:none;border:none;cursor:pointer;font-weight:600;-webkit-tap-highlight-color:transparent}
+.hist-list{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.hist-item{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:10px 14px;font-size:.9rem;cursor:pointer;transition:background .12s;
+  display:flex;justify-content:space-between;align-items:center;gap:10px
 }
-.history-item {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 10px; padding: 12px 14px; font-size: .95rem;
-  cursor: pointer; transition: background .1s;
-  display: flex; justify-content: space-between; align-items: center;
-}
-.history-item:active { background: #f1f5f9; }
-.history-item .time { font-size: .7rem; color: var(--sub); white-space: nowrap; margin-left: 8px; }
-.history-item .copy-hint { font-size: .65rem; color: var(--blue); opacity: 0; transition: opacity .2s; }
-.history-item:active .copy-hint { opacity: 1; }
-.history-empty { color: #cbd5e1; text-align: center; padding: 24px; font-style: italic; }
+.hist-item:active{background:#f1f5f9}
+.hist-item .time{font-size:.68rem;color:var(--sub);white-space:nowrap;flex-shrink:0}
+.hist-item .text{flex:1;min-width:0}
+.hist-item .del-btn{background:none;border:none;color:#cbd5e1;font-size:1.1rem;cursor:pointer;padding:4px 8px;border-radius:8px;flex-shrink:0}
+.hist-item .del-btn:active{color:var(--red);background:#fef2f2}
+.hist-empty{color:#cbd5e1;text-align:center;padding:28px;font-style:italic}
 
-/* Vocab Panel (slide-up) */
-.overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.35);
-  z-index: 100; display: none; align-items: flex-end;
-}
-.overlay.show { display: flex; }
-.vocab-panel {
-  background: var(--card); border-radius: 20px 20px 0 0;
-  width: 100%; max-height: 70vh; padding: 20px 16px;
-  overflow-y: auto; -webkit-overflow-scrolling: touch;
-}
-.vocab-panel h2 { font-size: 1.1rem; margin-bottom: 12px; }
-.vocab-panel .lesson-group { margin-bottom: 14px; }
-.vocab-panel .lesson-group h4 { font-size: .85rem; color: var(--blue); margin-bottom: 4px; }
-.vocab-panel .word-list { display: flex; flex-wrap: wrap; gap: 4px 8px; }
-.vocab-panel .word-tag {
-  background: #f1f5f9; padding: 3px 8px; border-radius: 6px;
-  font-size: .8rem; color: var(--text);
-}
-.vocab-close {
-  position: sticky; top: 0; float: right;
-  background: var(--border); border: none; border-radius: 50%;
-  width: 32px; height: 32px; font-size: 1.1rem; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-}
+/* Vocab overlay */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;display:none;align-items:flex-end}
+.overlay.show{display:flex}
+.vocab-panel{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-height:70vh;padding:18px 16px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.vocab-panel h2{font-size:1.1rem;margin-bottom:12px}
+.lesson-group{margin-bottom:12px}
+.lesson-group h4{font-size:.8rem;color:var(--blue);margin-bottom:4px}
+.word-list{display:flex;flex-wrap:wrap;gap:3px 6px}
+.word-tag{background:#f1f5f9;padding:3px 7px;border-radius:5px;font-size:.75rem}
+.vocab-close{position:sticky;top:0;float:right;background:var(--border);border:none;border-radius:50%;width:30px;height:30px;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
 
 /* Toast */
-.toast {
-  position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
-  background: #1e293b; color: #fff; padding: 10px 20px;
-  border-radius: 99px; font-size: .85rem; z-index: 200;
-  opacity: 0; transition: opacity .25s; pointer-events: none;
-}
-.toast.show { opacity: 1; }
+.toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:99px;font-size:.85rem;z-index:200;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
 
 /* iPad landscape */
-@media (min-width: 768px) {
-  .app-body { display: flex; flex: 1; gap: 0; }
-  .main-panel { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .history-section { max-width: 360px; border-left: 1px solid var(--border); }
-  .history-list { max-height: none; }
+@media(min-width:768px){
+  .app-body{display:flex;flex:1;gap:0;overflow:hidden}
+  .main-col{flex:1;min-width:0;display:flex;flex-direction:column}
+  .hist-section{border-left:1px solid var(--border);max-width:340px;display:flex;flex-direction:column;padding:8px 16px 14px}
+  .hist-list{max-height:none;flex:1}
 }
-@media (min-width: 1024px) {
-  html { font-size: 18px; }
-  .live-box { min-height: 120px; padding: 28px 36px; }
-  .history-section { max-width: 420px; }
+@media(min-width:1024px){
+  html{font-size:18px}
+  .live-box{min-height:130px;padding:28px 28px}
+  .hist-section{max-width:400px}
 }
 </style>
 </head>
@@ -171,50 +137,60 @@ header .badge {
   <span class="badge" id="wordCount">L1-L8</span>
 </header>
 
-<div class="status-bar">
-  <span class="dot idle" id="statusDot"></span>
-  <span id="statusText">Listo para comenzar</span>
+<div class="status-row">
+  <div class="status-dot idle" id="statusDot"></div>
+  <span class="status-txt" id="statusText">Listo</span>
+  <span class="sentence-count" id="sentCount"></span>
 </div>
 
-<div class="controls">
-  <button class="btn btn-start" id="btnStart" onclick="startListen()">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-    Comenzar
+<div class="ctrls">
+  <button class="btn btn-rec paused" id="btnRec" onclick="toggleRec()">
+    <svg id="micIcon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+    <span id="btnLabel">Comenzar</span>
   </button>
-  <button class="btn btn-stop" id="btnStop" onclick="stopListen()" disabled>
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
-    Detener
+  <button class="btn btn-final" id="btnFinal" onclick="finalizeSentence()" disabled>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    Finalizar frase
   </button>
-  <button class="btn btn-clear" onclick="clearHistory()">
+  <button class="btn btn-icon" onclick="toggleVocab()" title="Vocabulario">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+  </button>
+  <button class="btn btn-icon" onclick="clearHistory()" title="Limpiar">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-    Limpiar
-  </button>
-  <button class="btn btn-vocab" onclick="toggleVocab()">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-    Vocabulario
   </button>
 </div>
 
 <div class="app-body">
-<div class="main-panel">
-<div class="live-section">
+<div class="main-col">
+<div class="live-area">
   <div class="live-box" id="liveBox">
-    <span class="placeholder">Pulsa "Comenzar" y habla en español...</span>
+    <span class="placeholder">Pulsa Comenzar y habla en español...</span>
+    <span class="edit-hint">Toca para editar</span>
+  </div>
+</div>
+<div class="edit-area" id="editArea">
+  <textarea id="editText"></textarea>
+  <div class="edit-actions">
+    <button class="btn btn-icon" onclick="cancelEdit()" style="font-size:.85rem">Cancelar</button>
+    <button class="btn btn-final" onclick="saveEdit()" style="font-size:.85rem">Guardar frase</button>
   </div>
 </div>
 </div>
 
-<div class="history-section">
-  <h3>Historial</h3>
-  <div class="history-list" id="historyList">
-    <div class="history-empty">El historial aparecerá aquí</div>
+<div class="hist-section">
+  <div class="hist-header">
+    <h3>Historial</h3>
+    <button class="export-btn" onclick="exportHistory()">Exportar todo</button>
+  </div>
+  <div class="hist-list" id="historyList">
+    <div class="hist-empty">El historial aparecerá aquí</div>
   </div>
 </div>
 </div>
 
-<!-- Vocab Overlay -->
+<!-- Vocab -->
 <div class="overlay" id="vocabOverlay" onclick="if(event.target===this)toggleVocab()">
-  <div class="vocab-panel" id="vocabPanel">
+  <div class="vocab-panel">
     <button class="vocab-close" onclick="toggleVocab()">✕</button>
     <h2>Vocabulario L1–L8</h2>
     <div id="vocabContent"></div>
@@ -224,256 +200,405 @@ header .badge {
 <div class="toast" id="toast"></div>
 
 <script>
-// ===== VOCABULARY DATA (L1-L8) =====
+// ==================== VOCABULARY ====================
 const VOCAB_BY_LESSON = {
   'Lección 1': ['amigo','amiga','libro','empleado','empleada','mesa','silla','médico','médica','gato','gata','Pepe','Ema','Ana','Manolo','Susana','Paco','Lola','es','son','él','ella','eres','soy','quién','quiénes'],
   'Lección 2': ['señor','señora','señorita','estudiante','médico','médica','enfermero','enfermera','empresario','empresaria','secretario','secretaria','camarero','camarera','escuela','idioma','español','española','alemán','alemana','joven','jóvenes','este','esta','estos','estas','ese','esa','esos','esas','aquel','aquella','aquellos','aquellas','qué','usted','también','profesor','profesora','gerente','Me llamo','mucho gusto','encantado','encantada'],
   'Lección 3': ['China','china','Venezuela','venezolano','venezolana','Argentina','argentino','argentina','agua','vaso','casa','cosa','soy','eres','es','somos','sois','son','yo','tú','él','ella','usted','nosotros','nosotras','vosotros','vosotras','ellos','ellas','ustedes','de','dónde','de dónde'],
   'Lección 4': ['bueno','buena','malo','mala','guapo','guapa','feo','fea','alto','alta','bajo','baja','gordo','gorda','delgado','delgada','grande','pequeño','pequeña','bonito','bonita','nuevo','nueva','viejo','vieja','interesante','coche','reloj','cama','sofá','televisor','habitación','piso','planta','jardín','cocina','cuarto','baño','sala','comedor','estoy','estás','está','estamos','estáis','están','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez','cómo','estar','ser'],
-  'Lección 5': ['casa','alquiler','planta','metro','centro','dormitorio','ventana','puerta','calle','mueble','espejo','alfombra','cuadro','lámpara','este','esta','estos','estas','ese','esa','esos','esas','aquel','aquella','aquellos','aquellas','éste','ésta','éstos','éstas','ése','ésa','ésos','ésas','aquél','aquélla','aquéllos','aquéllas','mi','mis','tu','tus','su','sus','nuestro','nuestra','nuestros','nuestras','vuestro','vuestra','vuestros','vuestras','hay','en','cuánto','cuánta','cuántos','cuántas'],
+  'Lección 5': ['casa','alquiler','planta','metro','centro','dormitorio','ventana','puerta','calle','mueble','espejo','alfombra','cuadro','lámpara','éste','ésta','éstos','éstas','ése','ésa','ésos','ésas','aquél','aquélla','aquéllos','aquéllas','mi','mis','tu','tus','su','sus','nuestro','nuestra','nuestros','nuestras','vuestro','vuestra','vuestros','vuestras','hay','en','cuánto','cuánta','cuántos','cuántas'],
   'Lección 6': ['hora','reloj','mañana','tarde','noche','mediodía','medianoche','primavera','verano','otoño','invierno','mes','día','semana','año','cuarto','media','tengo','tienes','tiene','tenemos','tenéis','tienen','once','doce','trece','catorce','quince','dieciséis','diecisiete','dieciocho','diecinueve','veinte','treinta','cuarenta','cincuenta','sesenta','setenta','ochenta','noventa','enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre','lunes','martes','miércoles','jueves','viernes','sábado','domingo'],
-  'Lección 7': ['tiempo','frío','calor','viento','sol','lluvia','nieve','norte','sur','este','oeste','hago','haces','hace','hacemos','hacéis','hacen','llueve','nieva','no','diciembre','hace frío','hace calor','hace viento','hace buen tiempo','hace mal tiempo'],
+  'Lección 7': ['tiempo','frío','calor','viento','sol','lluvia','nieve','norte','sur','este','oeste','hago','haces','hace','hacemos','hacéis','hacen','llueve','nieva','no','diciembre'],
   'Lección 8': ['correos','mercado','banco','supermercado','tienda','oficina','cine','fin de semana','cumpleaños','fiesta','gente','compañero','compañera','trabajo','bebida','comida','café','voy','vas','va','vamos','vais','van','vengo','vienes','viene','venimos','venís','vienen','puedo','puedes','puede','podemos','podéis','pueden','adónde','ir','venir','poder','dar','invitar','ordenar','comprar','trabajar','después','tampoco','por supuesto','por la noche','por qué','Diga','Hasta mañana','otro','otra']
 };
 
-// Build flat vocab set + lesson lookup
-const VOCAB_WORDS = new Set();
+const VOCAB = new Set();
 const WORD_LESSON = {};
-// Normalize: lowercase, strip basic accents
-function normalize(s) { return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
-for (const [lesson, words] of Object.entries(VOCAB_BY_LESSON)) {
-  for (const w of words) {
-    const key = normalize(w);
-    VOCAB_WORDS.add(key);
-    WORD_LESSON[key] = lesson;
-  }
+function norm(s){ return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+for(const [l,ws] of Object.entries(VOCAB_BY_LESSON)){
+  for(const w of ws){ const k=norm(w); VOCAB.add(k); WORD_LESSON[k]=l; }
 }
 
-// ===== SPEECH RECOGNITION =====
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recognition = null;
-let isListening = false;
-let finalTranscript = '';
+// ==================== SPEECH RECOGNITION ====================
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+let listening = false;
+let sentenceParts = [];    // accumulated final parts for current sentence
+let silenceTimer = null;   // auto-finalize after silence
+const SILENCE_DELAY = 2000; // 2s silence = end of sentence
 
+// DOM
 const liveBox = document.getElementById('liveBox');
 const statusDot = document.getElementById('statusDot');
 const statusText = document.getElementById('statusText');
-const btnStart = document.getElementById('btnStart');
-const btnStop = document.getElementById('btnStop');
+const sentCount = document.getElementById('sentCount');
+const btnRec = document.getElementById('btnRec');
+const btnLabel = document.getElementById('btnLabel');
+const micIcon = document.getElementById('micIcon');
+const btnFinal = document.getElementById('btnFinal');
+const editArea = document.getElementById('editArea');
+const editText = document.getElementById('editText');
 const historyList = document.getElementById('historyList');
 
-function initRecognition() {
-  if (!SpeechRecognition) {
-    liveBox.innerHTML = '<span style="color:#dc2626">⚠️ Tu navegador no soporta reconocimiento de voz.<br><small>Usa Safari en iPad/iPhone o Chrome en Android/PC.</small></span>';
-    btnStart.disabled = true;
-    return;
-  }
-  recognition = new SpeechRecognition();
-  recognition.lang = 'es-ES';
-  recognition.interimResults = true;
-  recognition.continuous = true;
-  recognition.maxAlternatives = 1;
+// ==================== INIT RECOGNITION ====================
+function createRecognition(){
+  const r = new SR();
+  r.lang = 'es-ES';
+  r.interimResults = true;
+  r.continuous = false;     // false works better on iOS Safari
+  r.maxAlternatives = 1;
+  return r;
+}
 
-  recognition.onresult = (event) => {
+function bindEvents(r){
+  r.onresult = e => {
     let interim = '';
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      const result = event.results[i];
-      if (result.isFinal) {
-        finalTranscript += result[0].transcript.trim() + ' ';
+    for(let i=e.resultIndex; i<e.results.length; i++){
+      const res = e.results[i];
+      if(res.isFinal){
+        sentenceParts.push(res[0].transcript.trim());
       } else {
-        interim += result[0].transcript;
+        interim += res[0].transcript;
       }
     }
-    updateLive(finalTranscript.trim(), interim.trim());
+    updateLiveDisplay(interim);
+    resetSilenceTimer();
   };
 
-  recognition.onerror = (event) => {
-    console.log('Recognition error:', event.error);
-    if (event.error === 'no-speech' || event.error === 'aborted') return;
-    let msg = 'Error: ' + event.error;
-    if (event.error === 'not-allowed') msg = 'Permiso de micrófono denegado. Ve a Ajustes → Safari → Micrófono.';
-    if (event.error === 'network') msg = 'Error de red. Verifica tu conexión.';
-    statusText.textContent = msg;
-    setStatus('idle');
-  };
-
-  recognition.onend = () => {
-    // Save final transcript if any
-    if (finalTranscript.trim()) {
-      saveToHistory(finalTranscript.trim());
-      finalTranscript = '';
+  r.onerror = e => {
+    console.log('SR error:', e.error);
+    if(e.error==='no-speech'){
+      // Just silence — keep listening if we're still supposed to be listening
+      if(listening) resetSilenceTimer();
+      return;
     }
-    // Auto-restart if still listening
-    if (isListening) {
-      try { recognition.start(); } catch(e) {}
+    if(e.error==='aborted') return;
+    if(e.error==='not-allowed'){
+      statusText.textContent = 'Micrófono denegado. Ajustes → Safari → Micrófono';
+      setStatus('idle');
+      return;
+    }
+    if(e.error==='network'){
+      statusText.textContent = 'Error de red. Verifica conexión.';
+      setStatus('idle');
+      return;
     }
   };
 
-  recognition.onaudiostart = () => setStatus('listen');
-  recognition.onaudioend = () => setStatus('idle');
+  r.onend = () => {
+    // On iOS, recognition auto-stops after ~30s or after silence
+    // We need to restart quickly to maintain continuous listening
+    if(listening){
+      // Small delay to avoid race conditions on Safari
+      setTimeout(() => {
+        if(listening && rec){
+          try { rec.start(); } catch(ex){
+            // If start fails, recreate
+            rec = createRecognition();
+            bindEvents(rec);
+            try { rec.start(); } catch(ex2){}
+          }
+        }
+      }, 80);
+    }
+  };
+
+  r.onaudiostart = () => setStatus('listen');
+  r.onaudioend = () => { if(listening) setStatus('listen'); };
 }
 
-function startListen() {
-  if (!recognition) return;
-  if (isListening) return;
+// ==================== LISTENING CONTROL ====================
+function toggleRec(){
+  if(listening){ stopListening(); }
+  else { startListening(); }
+}
 
-  // On iOS, we must create a new instance each time due to Safari quirks
-  try {
-    recognition.start();
-  } catch(e) {
-    // Recreate on error
-    recognition = new SpeechRecognition();
-    recognition.lang = 'es-ES';
-    recognition.interimResults = true;
-    recognition.continuous = true;
-    recognition.maxAlternatives = 1;
-    initRecognition();
-    try { recognition.start(); } catch(e2) { return; }
+function startListening(){
+  if(!SR){
+    liveBox.innerHTML='<span style="color:#dc2626">Navegador no compatible. Usa Safari en iPad/iPhone.</span>';
+    return;
   }
+  listening = true;
+  sentenceParts = [];
+  rec = createRecognition();
+  bindEvents(rec);
+  try { rec.start(); } catch(e){ rec = createRecognition(); bindEvents(rec); rec.start(); }
 
-  isListening = true;
-  finalTranscript = '';
-  liveBox.classList.add('active');
-  btnStart.disabled = true;
-  btnStop.disabled = false;
-  statusText.textContent = 'Escuchando... habla en español';
+  updateUIForListening();
+  resetSilenceTimer();
   setStatus('listen');
+  statusText.textContent = 'Escuchando... habla en español';
 }
 
-function stopListen() {
-  if (!recognition) return;
-  isListening = false;
-  try { recognition.stop(); } catch(e) {}
+function stopListening(){
+  listening = false;
+  clearTimeout(silenceTimer);
+  try { rec.stop(); } catch(e){}
 
-  // Save any remaining final transcript
-  if (finalTranscript.trim()) {
-    saveToHistory(finalTranscript.trim());
-    finalTranscript = '';
-  }
+  // Save current sentence if any
+  finalizeAndSave();
 
-  liveBox.classList.remove('active');
-  btnStart.disabled = false;
-  btnStop.disabled = true;
-  statusText.textContent = 'Listo para comenzar';
+  updateUIForIdle();
   setStatus('idle');
+  statusText.textContent = 'Listo';
 }
 
-function setStatus(s) {
-  statusDot.className = 'dot ' + s;
+function finalizeSentence(){
+  if(!listening && sentenceParts.length===0) return;
+  finalizeAndSave();
+  // If still listening, restart accumulation
+  sentenceParts = [];
+  updateLiveDisplay('');
+  showToast('Frase guardada');
 }
 
-function updateLive(finalText, interimText) {
-  let html = '';
-  if (finalText) {
-    html += '<span class="confirmed">' + highlightVocab(finalText) + '</span> ';
-  }
-  if (interimText) {
-    html += '<span class="interim">' + escapeHtml(interimText) + '</span>';
-  }
-  if (!html) {
-    html = '<span class="placeholder">Escuchando...</span>';
-  }
-  liveBox.innerHTML = html;
-  liveBox.scrollTop = liveBox.scrollHeight;
+function finalizeAndSave(){
+  if(sentenceParts.length===0) return;
+  const raw = sentenceParts.join(' ').trim();
+  sentenceParts = [];
+  if(!raw) return;
+  const punctuated = addPunctuation(raw);
+  saveToHistory(punctuated);
+  updateLiveDisplay('');
+  btnFinal.disabled = true;
+  sentCount.textContent = '';
 }
 
-// Highlight vocabulary words in confirmed text
-function highlightVocab(text) {
-  return text.split(/\b/).map(part => {
-    const key = normalize(part);
-    if (VOCAB_WORDS.has(key) && part.length > 1) {
-      return '<span class="vocab-match" title="' + (WORD_LESSON[key] || '') + '">' + escapeHtml(part) + '</span>';
+function resetSilenceTimer(){
+  clearTimeout(silenceTimer);
+  if(!listening) return;
+  // After silence, don't auto-save — just mark that user can finalize
+  // Auto-finalize only after a longer silence
+  silenceTimer = setTimeout(() => {
+    if(listening && sentenceParts.length>0){
+      // Don't auto-save; instead highlight the Finalizar button
+      btnFinal.disabled = false;
+      btnFinal.style.animation = 'glow 1s ease-in-out 3';
+      setTimeout(() => btnFinal.style.animation = '', 3000);
     }
-    return escapeHtml(part);
+  }, SILENCE_DELAY);
+}
+
+// ==================== PUNCTUATION ENGINE ====================
+function addPunctuation(text){
+  if(!text) return text;
+  let t = text.trim();
+
+  // Remove trailing partial words (often from cut-off recognition)
+  // t = t.replace(/\s+\w{1,2}$/, '');
+
+  // Capitalize first letter
+  t = t.charAt(0).toUpperCase() + t.slice(1);
+
+  // Detect question patterns and wrap with ¿...?
+  const questionWords = /\b(qu[ié]|qui[eé]n|qui[ée]nes|c[oó]mo|d[oó]nde|ad[oó]nde|cu[áa]ndo|cu[áa]nto|cu[áa]nta|cu[áa]ntos|cu[áa]ntas|cu[áa]l|cu[áa]les|por qu[ée]|qu[ée])\b/i;
+  if(questionWords.test(t)){
+    t = '¿' + t + '?';
+  }
+  // Detect exclamation-like patterns
+  else if(/^(qu[ée]|cu[áa]nto|c[oó]mo)\s+(bonit|guap|bell|hermos|grand|buen|mal|feo|delicios|riqu|interesant)/i.test(t)){
+    t = '¡' + t + '!';
+  }
+  // Add period
+  else if(!/[.?!]$/.test(t)){
+    t += '.';
+  }
+
+  // Fix common recognition errors
+  t = t.replace(/\s([,.?!])/g, '$1');       // remove space before punctuation
+  t = t.replace(/([,.?!])(\w)/g, '$1 $2');   // add space after punctuation
+  t = t.replace(/\s+/g, ' ');                 // normalize spaces
+
+  return t;
+}
+
+// ==================== LIVE DISPLAY ====================
+function updateLiveDisplay(interim){
+  let html = '<div class="content">';
+
+  if(sentenceParts.length > 0){
+    const full = sentenceParts.join(' ') + (interim ? ' ' : '');
+    html += '<span class="sentence">' + highlightVocab(full) + '</span>';
+  }
+  if(interim){
+    if(sentenceParts.length > 0) html += ' ';
+    html += '<span class="interim">' + escHtml(interim) + '</span>';
+  }
+  if(sentenceParts.length === 0 && !interim){
+    html += '<span class="placeholder">Escuchando...</span>';
+  }
+  html += '</div>';
+  liveBox.innerHTML = html + '<span class="edit-hint">Toca para editar</span>';
+
+  // Update sentence count
+  if(sentenceParts.length > 0){
+    sentCount.textContent = sentenceParts.length + ' fragmento' + (sentenceParts.length>1?'s':'');
+  }
+}
+
+function highlightVocab(text){
+  return text.split(/\b/).map(part => {
+    if(VOCAB.has(norm(part)) && part.length>1){
+      return '<span class="vocab" title="'+ (WORD_LESSON[norm(part)]||'') +'">'+escHtml(part)+'</span>';
+    }
+    return escHtml(part);
   }).join('');
 }
 
-function escapeHtml(s) {
-  const div = document.createElement('div');
-  div.textContent = s;
-  return div.innerHTML;
+function escHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+// ==================== EDIT MODE ====================
+liveBox.addEventListener('click', () => {
+  if(sentenceParts.length===0 && !listening) return;
+  const full = sentenceParts.join(' ');
+  editText.value = full || '';
+  editArea.classList.add('show');
+});
+
+function cancelEdit(){
+  editArea.classList.remove('show');
 }
 
-// ===== HISTORY =====
+function saveEdit(){
+  const newText = editText.value.trim();
+  editArea.classList.remove('show');
+  if(newText){
+    sentenceParts = [newText];
+    finalizeAndSave();
+  }
+}
+
+// ==================== UI STATE ====================
+function updateUIForListening(){
+  btnRec.classList.remove('paused');
+  btnLabel.textContent = 'Detener';
+  micIcon.innerHTML = '<rect x="6" y="6" width="12" height="12" rx="1"/>';
+  btnFinal.disabled = true;
+  liveBox.classList.add('active');
+}
+
+function updateUIForIdle(){
+  btnRec.classList.add('paused');
+  btnLabel.textContent = 'Comenzar';
+  micIcon.innerHTML = '<path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/>';
+  btnFinal.disabled = true;
+  liveBox.classList.remove('active');
+}
+
+function setStatus(s){ statusDot.className = 'status-dot '+s; }
+
+// ==================== HISTORY (localStorage) ====================
+const STORAGE_KEY = 'dictado_historial_v2';
 let history = [];
-function saveToHistory(text) {
-  const now = new Date();
-  const time = now.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
-  history.unshift({ text, time, id: Date.now() });
+
+function loadHistory(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    history = raw ? JSON.parse(raw) : [];
+  } catch(e){ history = []; }
   renderHistory();
 }
 
-function clearHistory() {
+function saveHistory(){
+  try {
+    // Keep last 200 entries
+    if(history.length > 200) history = history.slice(0, 200);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+  } catch(e){}
+}
+
+function saveToHistory(text){
+  const now = new Date();
+  const time = now.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
+  const date = now.toLocaleDateString('es-ES', {day:'numeric',month:'short'});
+  history.unshift({ text, time: date+' '+time, id: Date.now() });
+  saveHistory();
+  renderHistory();
+  sentCount.textContent = '';
+}
+
+function deleteHistoryItem(id){
+  history = history.filter(h => h.id !== id);
+  saveHistory();
+  renderHistory();
+  showToast('Eliminado');
+}
+
+function clearHistory(){
+  if(!history.length) return;
   history = [];
+  saveHistory();
   renderHistory();
   showToast('Historial borrado');
 }
 
-function renderHistory() {
-  if (history.length === 0) {
-    historyList.innerHTML = '<div class="history-empty">El historial aparecerá aquí</div>';
+function renderHistory(){
+  if(history.length===0){
+    historyList.innerHTML = '<div class="hist-empty">El historial aparecerá aquí</div>';
     return;
   }
   historyList.innerHTML = history.map(h =>
-    `<div class="history-item" onclick="copyItem('${escapeHtml(h.text).replace(/'/g,"\\'")}', this)" data-id="${h.id}">
-      <span>${escapeHtml(h.text)}</span>
-      <span class="time">${h.time}<span class="copy-hint"> — Copiado</span></span>
+    `<div class="hist-item" onclick="copyItem('${escHtml(h.text).replace(/'/g,"\\'")}',event)">
+      <span class="text">${escHtml(h.text)}</span>
+      <span class="time">${h.time}</span>
+      <button class="del-btn" onclick="event.stopPropagation();deleteHistoryItem(${h.id})">×</button>
     </div>`
   ).join('');
 }
 
-function copyItem(text, el) {
+function copyItem(text, evt){
+  if(evt.target.classList.contains('del-btn')) return;
   navigator.clipboard?.writeText(text).then(() => {
-    const hint = el.querySelector('.copy-hint');
-    if (hint) { hint.style.opacity = '1'; setTimeout(() => hint.style.opacity = '0', 1500); }
-    showToast('Copiado: ' + text.substring(0, 40) + (text.length>40?'...':''));
-  }).catch(() => showToast('Toca para seleccionar y copiar'));
+    showToast('Copiado');
+  }).catch(() => showToast('Selecciona para copiar'));
 }
 
-function exportHistory() {
-  if (history.length === 0) return showToast('No hay historial');
+function exportHistory(){
+  if(!history.length) return showToast('No hay historial');
   const text = history.map(h => h.text).join('\n');
-  navigator.clipboard?.writeText(text).then(() => showToast('Todo el historial copiado'));
+  navigator.clipboard?.writeText(text).then(() => {
+    showToast('Exportado ('+history.length+' frases)');
+  }).catch(() => showToast('Error al exportar'));
 }
 
-// ===== VOCAB PANEL =====
-function toggleVocab() {
+// ==================== VOCAB PANEL ====================
+function toggleVocab(){
   document.getElementById('vocabOverlay').classList.toggle('show');
 }
-// Build vocab panel
-(function buildVocabPanel() {
-  const container = document.getElementById('vocabContent');
-  let html = '';
-  for (const [lesson, words] of Object.entries(VOCAB_BY_LESSON)) {
-    html += `<div class="lesson-group"><h4>${lesson} (${words.length} palabras)</h4><div class="word-list">`;
-    html += words.map(w => `<span class="word-tag">${w}</span>`).join('');
-    html += '</div></div>';
+(function buildVocabPanel(){
+  const c = document.getElementById('vocabContent');
+  let h = '';
+  for(const [l,ws] of Object.entries(VOCAB_BY_LESSON)){
+    h += `<div class="lesson-group"><h4>${l} (${ws.length})</h4><div class="word-list">`;
+    h += ws.map(w => `<span class="word-tag">${w}</span>`).join('');
+    h += '</div></div>';
   }
-  container.innerHTML = html;
-  document.getElementById('wordCount').textContent = 'L1-L8 · ' + VOCAB_WORDS.size + ' palabras';
+  c.innerHTML = h;
+  document.getElementById('wordCount').textContent = 'L1-L8 · '+VOCAB.size+' palabras';
 })();
 
-// ===== TOAST =====
-function showToast(msg) {
-  const toast = document.getElementById('toast');
-  toast.textContent = msg;
-  toast.classList.add('show');
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => toast.classList.remove('show'), 2000);
+// ==================== TOAST ====================
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), 1800);
 }
 
-// ===== KEYBOARD SHORTCUTS =====
-document.addEventListener('keydown', (e) => {
-  if (e.key === ' ' && !isListening && document.activeElement === document.body) {
-    e.preventDefault();
-    startListen();
-  } else if (e.key === 'Escape' && isListening) {
-    stopListen();
+// ==================== KEYBOARD ====================
+document.addEventListener('keydown', e => {
+  if(e.key===' ' && !listening && document.activeElement===document.body){
+    e.preventDefault(); startListening();
+  }else if(e.key==='Escape' && listening){
+    stopListening();
+  }else if(e.key==='Enter' && listening && sentenceParts.length>0){
+    finalizeSentence();
   }
 });
 
-// ===== INIT =====
-initRecognition();
+// ==================== INIT ====================
+loadHistory();
+document.getElementById('sentCount').textContent = '';
 </script>
 </body>
 </html>
