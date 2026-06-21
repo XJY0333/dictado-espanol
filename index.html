@@ -361,25 +361,47 @@ function finalizeAndSave(){
   sentenceParts = [];
   if(!raw) return;
   const punctuated = addPunctuation(raw);
+  lastPunctuated = punctuated;
   saveToHistory(punctuated);
-  updateLiveDisplay('');
-  btnFinal.disabled = true;
+  updateLiveDisplay('', true);
   sentCount.textContent = '';
+  setTimeout(() => {
+    if(lastPunctuated === punctuated){
+      lastPunctuated = '';
+      updateLiveDisplay('');
+    }
+  }, 3000);
 }
 
 function resetSilenceTimer(){
   clearTimeout(silenceTimer);
   if(!listening) return;
-  // After silence, don't auto-save — just mark that user can finalize
-  // Auto-finalize only after a longer silence
   silenceTimer = setTimeout(() => {
     if(listening && sentenceParts.length>0){
-      // Don't auto-save; instead highlight the Finalizar button
-      btnFinal.disabled = false;
-      btnFinal.style.animation = 'glow 1s ease-in-out 3';
-      setTimeout(() => btnFinal.style.animation = '', 3000);
+      // Auto-finalize after silence — no manual button needed
+      autoFinalize();
     }
   }, SILENCE_DELAY);
+}
+
+function autoFinalize(){
+  if(sentenceParts.length===0) return;
+  const raw = sentenceParts.join(' ').trim();
+  sentenceParts = [];
+  if(!raw) return;
+  const punctuated = addPunctuation(raw);
+  lastPunctuated = punctuated;
+  saveToHistory(punctuated);
+  updateLiveDisplay('', true); // show the punctuated result
+  sentCount.textContent = '';
+  // Clear after 3 seconds
+  setTimeout(() => {
+    if(lastPunctuated === punctuated){
+      lastPunctuated = '';
+      updateLiveDisplay('');
+    }
+  }, 3000);
+  showToast('✓ ' + punctuated.substring(0,50) + (punctuated.length>50?'...':''));
 }
 
 // ==================== PUNCTUATION ENGINE ====================
@@ -387,53 +409,76 @@ function addPunctuation(text){
   if(!text) return text;
   let t = text.trim();
 
-  // Remove trailing partial words (often from cut-off recognition)
-  // t = t.replace(/\s+\w{1,2}$/, '');
+  // Normalize spaces and remove trailing junk
+  t = t.replace(/\s+/g, ' ');
+  // Remove trailing incomplete words (often artifacts from cut-off recognition)
+  t = t.replace(/\s+\w{1}$/, '');
 
   // Capitalize first letter
   t = t.charAt(0).toUpperCase() + t.slice(1);
 
-  // Detect question patterns and wrap with ¿...?
-  const questionWords = /\b(qu[ié]|qui[eé]n|qui[ée]nes|c[oó]mo|d[oó]nde|ad[oó]nde|cu[áa]ndo|cu[áa]nto|cu[áa]nta|cu[áa]ntos|cu[áa]ntas|cu[áa]l|cu[áa]les|por qu[ée]|qu[ée])\b/i;
-  if(questionWords.test(t)){
+  // Detect question patterns — Spanish question words + inverted question mark
+  const qWords = /\b(qu[ié]|qui[eé]n|qui[ée]nes|c[oó]mo|d[oó]nde|ad[oó]nde|cu[áa]ndo|cu[áa]nt[oa]s?|cu[áa]l|cu[áa]les|por qu[ée]|qu[ée]|verdad|no)\?/i;
+  // Starts with question word OR ends with question-like intonation words
+  const startsQ = /^(qu[ié]|qui[eé]n|qui[ée]nes|c[oó]mo|d[oó]nde|ad[oó]nde|cu[áa]ndo|cu[áa]nt[oa]s?|cu[áa]l|cu[áa]les|por qu[ée]|qu[ée])\b/i;
+
+  if(startsQ.test(t) || /\b(verdad\??|no\??)$/i.test(t)){
     t = '¿' + t + '?';
   }
-  // Detect exclamation-like patterns
-  else if(/^(qu[ée]|cu[áa]nto|c[oó]mo)\s+(bonit|guap|bell|hermos|grand|buen|mal|feo|delicios|riqu|interesant)/i.test(t)){
+  // Exclamation patterns
+  else if(/^(qu[ée]|cu[áa]nt[oa]s?|c[oó]mo)\s+(bonit[oa]|guap[oa]|bell[oa]|hermos[oa]|grande|buen[oa]|mal[oa]|fe[oa]|delicios[oa]|riqu[íi]sim[oa]|interesante)/i.test(t)){
     t = '¡' + t + '!';
   }
-  // Add period
-  else if(!/[.?!]$/.test(t)){
+  // Add period if no ending punctuation
+  else if(!/[.?!¿¡]$/.test(t)){
     t += '.';
   }
 
   // Fix common recognition errors
-  t = t.replace(/\s([,.?!])/g, '$1');       // remove space before punctuation
-  t = t.replace(/([,.?!])(\w)/g, '$1 $2');   // add space after punctuation
-  t = t.replace(/\s+/g, ' ');                 // normalize spaces
+  t = t.replace(/\s([,.?!])/g, '$1');          // remove space before punct
+  t = t.replace(/([,.?!])(\w)/g, '$1 $2');      // add space after punct
+  t = t.replace(/([,.?!])\s*([,.?!])/g, '$2'); // dedupe punctuation
+  t = t.replace(/\s+/g, ' ');                    // normalize spaces
+  t = t.replace(/^\s+|\s+$/g, '');              // trim
+
+  // Fix missing opening question mark
+  if(/\?$/.test(t) && !/^¿/.test(t)){
+    t = '¿' + t;
+  }
+  // Fix missing opening exclamation mark
+  if(/\!$/.test(t) && !/^¡/.test(t)){
+    t = '¡' + t;
+  }
+
+  // Capitalize first after ¿ or ¡
+  t = t.replace(/^([¿¡])(\w)/, (m,p1,p2) => p1 + p2.toUpperCase());
 
   return t;
 }
 
 // ==================== LIVE DISPLAY ====================
-function updateLiveDisplay(interim){
+let lastPunctuated = ''; // store last finalized sentence for display
+
+function updateLiveDisplay(interim, showPunctuated){
   let html = '<div class="content">';
 
-  if(sentenceParts.length > 0){
+  if(showPunctuated && lastPunctuated){
+    html += '<span class="sentence" style="color:var(--text)">' + highlightVocab(lastPunctuated) + '</span>';
+    html += '<div style="font-size:.7rem;color:var(--green);margin-top:4px">✓ Guardado con puntuación</div>';
+  } else if(sentenceParts.length > 0){
     const full = sentenceParts.join(' ') + (interim ? ' ' : '');
     html += '<span class="sentence">' + highlightVocab(full) + '</span>';
   }
-  if(interim){
+  if(interim && !showPunctuated){
     if(sentenceParts.length > 0) html += ' ';
     html += '<span class="interim">' + escHtml(interim) + '</span>';
   }
-  if(sentenceParts.length === 0 && !interim){
+  if(sentenceParts.length === 0 && !interim && !showPunctuated){
     html += '<span class="placeholder">Escuchando...</span>';
   }
   html += '</div>';
   liveBox.innerHTML = html + '<span class="edit-hint">Toca para editar</span>';
 
-  // Update sentence count
   if(sentenceParts.length > 0){
     sentCount.textContent = sentenceParts.length + ' fragmento' + (sentenceParts.length>1?'s':'');
   }
