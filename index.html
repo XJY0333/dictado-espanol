@@ -228,6 +228,8 @@ let rec = null;
 let listening = false;
 let liveBuffer = '';        // THE buffer: everything ever recognized gets appended here
 let interimText = '';       // current interim (not-yet-final) text
+let silenceTimer = null;    // auto-finalize after silence
+const SILENCE_DELAY = 3000; // 3s silence → auto-punctuate + save
 
 // DOM
 const liveBox = document.getElementById('liveBox');
@@ -271,6 +273,7 @@ function bindEvents(r){
     interimText = newInterim;
     renderLive();
     updateFinalBtn();
+    resetSilenceTimer();
   };
 
   r.onerror = e => {
@@ -295,7 +298,8 @@ function bindEvents(r){
   };
 
   r.onspeechend = () => {
-    // Brief pause in speech — still listening
+    // Speech pause — start silence countdown for auto-finalize
+    resetSilenceTimer();
   };
 
   r.onend = () => {
@@ -361,6 +365,7 @@ function startListening(){
 
 function stopListening(){
   listening = false;
+  clearTimeout(silenceTimer);
   try { rec.abort(); } catch(e){}
   try { rec.stop(); } catch(e){}
 
@@ -378,6 +383,30 @@ function updateFinalBtn(){
     btnFinal.disabled = true;
     sentCount.textContent = '';
   }
+}
+
+function resetSilenceTimer(){
+  clearTimeout(silenceTimer);
+  if(!listening) return;
+  silenceTimer = setTimeout(() => {
+    if(listening && liveBuffer.trim()){
+      autoFinalize();
+    }
+  }, SILENCE_DELAY);
+}
+
+function autoFinalize(){
+  if(!listening) return;
+  const raw = liveBuffer.trim();
+  if(!raw) return;
+  const punctuated = addPunctuation(raw);
+  saveToHistory(punctuated);
+  showToast(punctuated.substring(0, 60) + (punctuated.length>60?'...':''));
+  // Clear buffer but keep listening
+  liveBuffer = '';
+  interimText = '';
+  renderLive();
+  updateFinalBtn();
 }
 
 function finalizeSentence(){
