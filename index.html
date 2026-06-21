@@ -1,711 +1,569 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Dictado Español</title>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<style>
-:root {
-  --blue:#2563eb; --green:#16a34a; --red:#dc2626; --amber:#d97706;
-  --bg:#f1f5f9; --card:#fff; --text:#0f172a; --sub:#64748b;
-  --border:#e2e8f0; --radius:18px;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html{font-size:17px}
-body{
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-  background:var(--bg); color:var(--text);
-  min-height:100vh; min-height:100dvh;
-  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-  display:flex; flex-direction:column;
-  -webkit-user-select:none; user-select:none;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>西语实时听写助理 - Lección 1-8</title>
+    <style>
+        :root {
+            --bg: #f4f7f6;
+            --card: #ffffff;
+            --text: #2c3e50;
+            --muted: #7f8c8d;
+            --border: #dcdde1;
+            --accent: #3498db;
+            --green: #2ecc71;
+            --green-hover: #27ae60;
+            --red: #e74c3c;
+            --red-hover: #c0392b;
+            --gray: #95a5a6;
+            --gray-hover: #7f8c8d;
+            --display-bg: #fafafa;
+        }
 
-header{
-  background:var(--card); border-bottom:1px solid var(--border);
-  padding:14px 18px; display:flex; align-items:center; justify-content:space-between;
-  position:sticky; top:0; z-index:10;
-}
-header h1{font-size:1.2rem; font-weight:700; letter-spacing:-.3px}
-header .badge{background:var(--green); color:#fff; font-size:.7rem; padding:5px 12px; border-radius:99px; font-weight:600}
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-/* Status */
-.status-row{display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 16px 0}
-.status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0; transition:background .3s}
-.status-dot.idle{background:#94a3b8}
-.status-dot.listen{background:#ef4444;animation:blink .7s infinite}
-.status-dot.saving{background:var(--amber)}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-.status-txt{font-size:.82rem;color:var(--sub)}
-.sentence-count{font-size:.75rem;color:var(--blue);font-weight:600;margin-left:auto}
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg);
+            color: #333;
+            margin: 0;
+            padding: 12px;
+            -webkit-text-size-adjust: 100%;
+        }
 
-/* Controls */
-.ctrls{display:flex;gap:10px;padding:12px 16px;justify-content:center;flex-wrap:wrap}
-.btn{
-  border:none;border-radius:99px;padding:13px 24px;font-size:.95rem;font-weight:600;
-  cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s;
-  min-height:46px;-webkit-tap-highlight-color:transparent;
-}
-.btn:active{transform:scale(.95)}
-.btn-rec{background:var(--red);color:#fff;box-shadow:0 4px 14px rgba(220,38,38,.3)}
-.btn-rec.paused{background:var(--blue);box-shadow:0 4px 14px rgba(37,99,235,.3);animation:glow 1.5s infinite}
-@keyframes glow{0%,100%{box-shadow:0 4px 14px rgba(37,99,235,.3)}50%{box-shadow:0 4px 28px rgba(37,99,235,.55)}}
-.btn-final{background:var(--amber);color:#fff;box-shadow:0 4px 14px rgba(217,119,6,.25)}
-.btn-icon{background:var(--border);color:var(--text);padding:13px 18px}
-.btn:disabled{opacity:.4;pointer-events:none}
-.btn svg{flex-shrink:0}
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: var(--card);
+            padding: 20px 16px;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
 
-/* Live area */
-.live-area{padding:8px 16px;flex:1;display:flex;flex-direction:column}
-.live-box{
-  background:var(--card);border:2.5px solid var(--border);border-radius:var(--radius);
-  padding:22px 20px;min-height:100px;font-size:1.35rem;line-height:1.55;
-  word-break:break-word;transition:border-color .25s;position:relative;
-  display:flex;align-items:center;
-}
-.live-box.active{border-color:var(--red);box-shadow:0 0 0 4px rgba(220,38,38,.06)}
-.live-box .content{width:100%}
-.live-box .interim{color:var(--sub);font-style:italic}
-.live-box .sentence{color:var(--text)}
-.live-box .vocab{color:var(--green);font-weight:650}
-.live-box .placeholder{color:#cbd5e1;font-style:italic;text-align:center;width:100%}
-.live-box .edit-hint{position:absolute;top:8px;right:12px;font-size:.65rem;color:var(--sub);opacity:0;transition:opacity .3s}
-.live-box:hover .edit-hint{opacity:1}
+        h1 {
+            text-align: center;
+            color: var(--text);
+            font-size: clamp(18px, 4vw, 24px);
+            margin: 0 0 20px 0;
+            line-height: 1.4;
+        }
 
-/* Edit overlay */
-.edit-area{display:none;padding:8px 16px}
-.edit-area.show{display:block}
-.edit-area textarea{
-  width:100%;min-height:80px;border:2px solid var(--blue);border-radius:var(--radius);
-  padding:14px;font-size:1.2rem;font-family:inherit;resize:vertical;
-}
-.edit-actions{display:flex;gap:8px;margin-top:8px;justify-content:flex-end}
+        /* ── Lesson Selector ── */
+        .lesson-selector {
+            margin-bottom: 18px;
+            text-align: center;
+        }
+        .lesson-selector label {
+            font-size: 15px;
+            color: var(--text);
+            display: block;
+            margin-bottom: 6px;
+        }
+        select {
+            padding: 14px 12px;
+            font-size: 16px;
+            border-radius: 10px;
+            border: 1.5px solid #ccc;
+            background: #fff;
+            width: 100%;
+            max-width: 400px;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237f8c8d' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            cursor: pointer;
+        }
 
-/* History */
-.hist-section{padding:0 16px 14px}
-.hist-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.hist-header h3{font-size:.82rem;color:var(--sub);text-transform:uppercase;letter-spacing:.5px}
-.hist-header .export-btn{font-size:.75rem;color:var(--blue);background:none;border:none;cursor:pointer;font-weight:600;-webkit-tap-highlight-color:transparent}
-.hist-list{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.hist-item{
-  background:var(--card);border:1px solid var(--border);border-radius:12px;
-  padding:10px 14px;font-size:.9rem;cursor:pointer;transition:background .12s;
-  display:flex;justify-content:space-between;align-items:center;gap:10px
-}
-.hist-item:active{background:#f1f5f9}
-.hist-item .time{font-size:.68rem;color:var(--sub);white-space:nowrap;flex-shrink:0}
-.hist-item .text{flex:1;min-width:0}
-.hist-item .del-btn{background:none;border:none;color:#cbd5e1;font-size:1.1rem;cursor:pointer;padding:4px 8px;border-radius:8px;flex-shrink:0}
-.hist-item .del-btn:active{color:var(--red);background:#fef2f2}
-.hist-empty{color:#cbd5e1;text-align:center;padding:28px;font-style:italic}
+        /* ── Controls ── */
+        .control-panel {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 14px 22px;
+            font-size: 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            min-height: 48px;
+            min-width: 48px;
+            transition: background 0.2s;
+            white-space: nowrap;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        button:active { transform: scale(0.97); }
 
-/* Vocab overlay */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;display:none;align-items:flex-end}
-.overlay.show{display:flex}
-.vocab-panel{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-height:70vh;padding:18px 16px;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.vocab-panel h2{font-size:1.1rem;margin-bottom:12px}
-.lesson-group{margin-bottom:12px}
-.lesson-group h4{font-size:.8rem;color:var(--blue);margin-bottom:4px}
-.word-list{display:flex;flex-wrap:wrap;gap:3px 6px}
-.word-tag{background:#f1f5f9;padding:3px 7px;border-radius:5px;font-size:.75rem}
-.vocab-close{position:sticky;top:0;float:right;background:var(--border);border:none;border-radius:50%;width:30px;height:30px;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .btn-start  { background-color: var(--green); color: #fff; }
+        .btn-start:hover, .btn-start:active  { background-color: var(--green-hover); }
+        .btn-stop   { background-color: var(--red); color: #fff; }
+        .btn-stop:hover, .btn-stop:active   { background-color: var(--red-hover); }
+        .btn-clear  { background-color: var(--gray); color: #fff; }
+        .btn-clear:hover, .btn-clear:active { background-color: var(--gray-hover); }
 
-/* Toast */
-.toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:99px;font-size:.85rem;z-index:200;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
-.toast.show{opacity:1}
+        .status {
+            text-align: center;
+            font-size: 15px;
+            color: var(--muted);
+            margin-bottom: 14px;
+            min-height: 22px;
+            transition: color 0.3s;
+        }
 
-/* iPad landscape */
-@media(min-width:768px){
-  .app-body{display:flex;flex:1;gap:0;overflow:hidden}
-  .main-col{flex:1;min-width:0;display:flex;flex-direction:column}
-  .hist-section{border-left:1px solid var(--border);max-width:340px;display:flex;flex-direction:column;padding:8px 16px 14px}
-  .hist-list{max-height:none;flex:1}
-}
-@media(min-width:1024px){
-  html{font-size:18px}
-  .live-box{min-height:130px;padding:28px 28px}
-  .hist-section{max-width:400px}
-}
-</style>
+        /* ── Live Transcript ── */
+        .live-label {
+            font-weight: 700;
+            color: #34495e;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+        .display-box {
+            border: 2px dashed #bdc3c7;
+            background: var(--display-bg);
+            border-radius: 10px;
+            padding: 16px;
+            min-height: 110px;
+            font-size: clamp(17px, 3vw, 20px);
+            line-height: 1.7;
+            color: var(--text);
+            margin-bottom: 22px;
+            word-wrap: break-word;
+            overflow-y: auto;
+            max-height: 240px;
+        }
+
+        /* ── Comparison Panels ── */
+        .comparison-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .panel-box {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+        }
+        .panel-title {
+            font-weight: 700;
+            font-size: 15px;
+            color: #34495e;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 6px;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+        .text-content {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 15px;
+            line-height: 1.6;
+            white-space: pre-line;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* ── iPad tip ── */
+        .ipad-tip {
+            margin-top: 18px;
+            padding: 12px 14px;
+            background: #eef6ff;
+            border-radius: 10px;
+            font-size: 13px;
+            color: #2c5282;
+            line-height: 1.5;
+        }
+        .ipad-tip code {
+            background: #dbeafe;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        /* ══════════════════════════════════════
+           iPad / Tablet / Mobile
+           ══════════════════════════════════════ */
+        @media (max-width: 768px) {
+            body { padding: 6px; }
+            .container { padding: 14px 10px; border-radius: 12px; }
+            .comparison-panel { grid-template-columns: 1fr; }
+            .text-content { max-height: 200px; }
+            button { padding: 14px 18px; font-size: 15px; }
+            .display-box { font-size: 16px; max-height: 200px; }
+        }
+
+        /* Narrow phone */
+        @media (max-width: 420px) {
+            .control-panel { flex-direction: column; align-items: stretch; }
+            button { width: 100%; }
+        }
+    </style>
 </head>
 <body>
 
-<header>
-  <h1>Dictado Español</h1>
-  <span class="badge" id="wordCount">L1-L8</span>
-</header>
+<div class="container">
+    <h1>🎧 实时西语听写助理<br><span style="font-size:0.75em;color:#7f8c8d;">课文 1-8 课智能纠错库版</span></h1>
 
-<div class="status-row">
-  <div class="status-dot idle" id="statusDot"></div>
-  <span class="status-txt" id="statusText">Listo</span>
-  <span class="sentence-count" id="sentCount"></span>
-</div>
+    <div class="lesson-selector">
+        <label for="lessonSelect">📖 选择课文对照范围：</label>
+        <select id="lessonSelect" onchange="loadLessonText()">
+            <option value="all" selected>📚 不限课文（全部 1-8 课范围）</option>
+            <option value="">── 单独指定一课 ──</option>
+            <option value="l1">第一课：¿Quién eres?（你是谁？）</option>
+            <option value="l2">第二课：¿Qué es él?（他是做什么工作的？）</option>
+            <option value="l3">第三课：¿De dónde eres?（你是哪儿人？）</option>
+            <option value="l4">第四课：¿Cómo estás?（你怎么样？）</option>
+            <option value="l5">第五课：¡Qué bonita es la casa!（这个家真漂亮！）</option>
+            <option value="l6">第六课：¿Qué hora es?（几点了？）</option>
+            <option value="l7">第七课：¿Qué tiempo hace?（天气怎么样？）</option>
+            <option value="l8">第八课：¿Adónde vas?（你去哪儿？）</option>
+        </select>
+    </div>
 
-<div class="ctrls">
-  <button class="btn btn-rec paused" id="btnRec" onclick="toggleRec()">
-    <svg id="micIcon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-    <span id="btnLabel">Comenzar</span>
-  </button>
-  <button class="btn btn-final" id="btnFinal" onclick="finalizeSentence()" disabled>
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-    Finalizar frase
-  </button>
-  <button class="btn btn-icon" onclick="toggleVocab()" title="Vocabulario">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-  </button>
-  <button class="btn btn-icon" onclick="clearHistory()" title="Limpiar">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-  </button>
-</div>
+    <div class="control-panel">
+        <button class="btn-start" onclick="startRecognition()">▶ 开始听写</button>
+        <button class="btn-stop"  onclick="stopRecognition()">■ 停止</button>
+        <button class="btn-clear" onclick="clearText()">✕ 清空</button>
+    </div>
 
-<div class="app-body">
-<div class="main-col">
-<div class="live-area">
-  <div class="live-box" id="liveBox">
-    <span class="placeholder">Pulsa Comenzar y habla en español...</span>
-    <span class="edit-hint">Toca para editar</span>
-  </div>
-</div>
-<div class="edit-area" id="editArea">
-  <textarea id="editText"></textarea>
-  <div class="edit-actions">
-    <button class="btn btn-icon" onclick="cancelEdit()" style="font-size:.85rem">Cancelar</button>
-    <button class="btn btn-final" onclick="saveEdit()" style="font-size:.85rem">Guardar frase</button>
-  </div>
-</div>
-</div>
+    <div class="status" id="statusText">就绪 — 点「开始听写」即可</div>
 
-<div class="hist-section">
-  <div class="hist-header">
-    <h3>Historial</h3>
-    <button class="export-btn" onclick="exportHistory()">Exportar todo</button>
-  </div>
-  <div class="hist-list" id="historyList">
-    <div class="hist-empty">El historial aparecerá aquí</div>
-  </div>
-</div>
-</div>
+    <div class="live-label">🎤 老师正在念的实时文本：</div>
+    <div class="display-box" id="resultDisplay">这里会实时显示识别出的西语，请注意重音符号和拼写…</div>
 
-<!-- Vocab -->
-<div class="overlay" id="vocabOverlay" onclick="if(event.target===this)toggleVocab()">
-  <div class="vocab-panel">
-    <button class="vocab-close" onclick="toggleVocab()">✕</button>
-    <h2>Vocabulario L1–L8</h2>
-    <div id="vocabContent"></div>
-  </div>
-</div>
+    <!-- 历史记录 -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span style="font-weight:700;color:#34495e;font-size:15px">📝 听写历史</span>
+      <button onclick="clearHistory()" style="padding:6px 14px;font-size:13px;background:#eee;border:none;border-radius:8px;cursor:pointer;min-height:auto">清空</button>
+    </div>
+    <div id="historyList" style="max-height:200px;overflow-y:auto;margin-bottom:22px;display:flex;flex-direction:column;gap:4px">
+      <span style="color:#bdc3c7;font-style:italic;text-align:center;padding:12px">识别完成后句子会出现在这里</span>
+    </div>
 
-<div class="toast" id="toast"></div>
+    <div class="comparison-panel">
+        <div class="panel-box">
+            <div class="panel-title">📖 书本原文对照</div>
+            <div class="text-content" id="originalText">加载中…</div>
+        </div>
+        <div class="panel-box">
+            <div class="panel-title">💡 纠错小助手</div>
+            <div class="text-content" id="helpTips">开始听写后，这里会动态提醒词汇重音、阴阳性、单复数等易错点。</div>
+        </div>
+    </div>
+
+    <div class="ipad-tip" id="ipadTip" style="display:none;">
+        <strong>📱 iPad / iPhone 使用提示：</strong><br>
+        ① 首次点击「开始听写」时 Safari 会弹出麦克风权限，请选<strong>「允许」</strong>。<br>
+        ② 如无法使用，可在电脑上运行 <code>python -m http.server 8080</code>，然后 iPad 浏览器访问 <code>电脑IP:8080/西语听写助手.html</code>（同一 WiFi 下）。<br>
+        ③ 建议不要锁屏，保持页面在前台。
+    </div>
+</div>
 
 <script>
-// ==================== VOCABULARY ====================
-const VOCAB_BY_LESSON = {
-  'Lección 1': ['amigo','amiga','libro','empleado','empleada','mesa','silla','médico','médica','gato','gata','Pepe','Ema','Ana','Manolo','Susana','Paco','Lola','es','son','él','ella','eres','soy','quién','quiénes'],
-  'Lección 2': ['señor','señora','señorita','estudiante','médico','médica','enfermero','enfermera','empresario','empresaria','secretario','secretaria','camarero','camarera','escuela','idioma','español','española','alemán','alemana','joven','jóvenes','este','esta','estos','estas','ese','esa','esos','esas','aquel','aquella','aquellos','aquellas','qué','usted','también','profesor','profesora','gerente','Me llamo','mucho gusto','encantado','encantada'],
-  'Lección 3': ['China','china','Venezuela','venezolano','venezolana','Argentina','argentino','argentina','agua','vaso','casa','cosa','soy','eres','es','somos','sois','son','yo','tú','él','ella','usted','nosotros','nosotras','vosotros','vosotras','ellos','ellas','ustedes','de','dónde','de dónde'],
-  'Lección 4': ['bueno','buena','malo','mala','guapo','guapa','feo','fea','alto','alta','bajo','baja','gordo','gorda','delgado','delgada','grande','pequeño','pequeña','bonito','bonita','nuevo','nueva','viejo','vieja','interesante','coche','reloj','cama','sofá','televisor','habitación','piso','planta','jardín','cocina','cuarto','baño','sala','comedor','estoy','estás','está','estamos','estáis','están','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez','cómo','estar','ser'],
-  'Lección 5': ['casa','alquiler','planta','metro','centro','dormitorio','ventana','puerta','calle','mueble','espejo','alfombra','cuadro','lámpara','éste','ésta','éstos','éstas','ése','ésa','ésos','ésas','aquél','aquélla','aquéllos','aquéllas','mi','mis','tu','tus','su','sus','nuestro','nuestra','nuestros','nuestras','vuestro','vuestra','vuestros','vuestras','hay','en','cuánto','cuánta','cuántos','cuántas'],
-  'Lección 6': ['hora','reloj','mañana','tarde','noche','mediodía','medianoche','primavera','verano','otoño','invierno','mes','día','semana','año','cuarto','media','tengo','tienes','tiene','tenemos','tenéis','tienen','once','doce','trece','catorce','quince','dieciséis','diecisiete','dieciocho','diecinueve','veinte','treinta','cuarenta','cincuenta','sesenta','setenta','ochenta','noventa','enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre','lunes','martes','miércoles','jueves','viernes','sábado','domingo'],
-  'Lección 7': ['tiempo','frío','calor','viento','sol','lluvia','nieve','norte','sur','este','oeste','hago','haces','hace','hacemos','hacéis','hacen','llueve','nieva','no','diciembre'],
-  'Lección 8': ['correos','mercado','banco','supermercado','tienda','oficina','cine','fin de semana','cumpleaños','fiesta','gente','compañero','compañera','trabajo','bebida','comida','café','voy','vas','va','vamos','vais','van','vengo','vienes','viene','venimos','venís','vienen','puedo','puedes','puede','podemos','podéis','pueden','adónde','ir','venir','poder','dar','invitar','ordenar','comprar','trabajar','después','tampoco','por supuesto','por la noche','por qué','Diga','Hasta mañana','otro','otra']
-};
+    // ─────────── 1-8 课课文数据库 ───────────
+    const lessonDatabase = {
+        all:
+`【第一课】\n¿Es ella Ana? No, ella no es Ana. Es Ema.\n¿Es ella Ema? No, ella no es Ema. Es Ana.\n¿Es él Pepe? Sí, él es Pepe.\n¿Es él Paco? Sí, él es Paco.\n¿Son ellas Ana y Ema? Sí, ellas son Ana y Ema.\n¿Son Ema y Paco amigos? Sí, ellos son amigos.\nHola! Buenos días.\n¿Eres Manolo? Sí, soy Manolo. Y tú, ¿cómo te llamas? Soy Lola. Y ella, ¿quién es? Es Elena. Es mi amiga. Mucho gusto. Encantada.\n
+【第二课】\nEste señor es David. Es empresario. Aquella señorita es Susana. Es secretaria.\nEste señor es Manuel. Es estudiante. Esta señora es Rosa. Es médica.\nAquellos jóvenes son Pepe, Paco y Ema. Pepe es camarero, Paco es secretario, y Ema, enfermera.\n¿Es ésta la Escuela de Idiomas? Sí. ¿Eres estudiante de español?\nSoy profesor. Me llamo Daniel.\nÉsta es Elena. Es médica y también es estudiante de español. Es alemana.\n
+【第三课】\nMe llamo Li Hua. Soy de China, de Beijing. Soy médica.\nMe llamo Ana. Soy de Bolivia, de La Paz. Soy abogada.\nÉl es Juan. Es de Argentina, de Buenos Aires. Es gerente.\nEllos son Mario y Cecilia. Son de Venezuela, de Caracas. Son funcionarios.\n¿Qué tal? Bien, ¿y tú? Muy bien, gracias. Mira, Marcos, unos amigos. Ésta es Lucía. Encantado. Yo soy Marcos, soy alemán, de Berlín. ¿De dónde eres? Soy italiana, de Roma. Éste es Julio, es francés, de París.\n
+【第四课】\n¿Cómo está usted? Bien, gracias. ¿Y usted? Muy bien.\n¿Cómo es el novio de Linda? Es alto, rubio, guapo y alegre.\n¿Cómo está este señor? Está mal. Está enfermo.\n¿Cómo es la casa de Manuel? Es grande, de dos plantas y muy bonita.\n¿Dónde está la casa de Li Ming? Está en el centro de la ciudad.\n¿Dónde están Linda y su marido? Están en casa.\n¿No está Julio en casa? Sí, pero está en la cama. ¿Está enfermo? Sí, está resfriado. 今天我好多了：hoy estoy mejor. Tu habitación es muy agradable. Sí, pero ahora está bastante desordenada.\n
+【第五课】\nÉsta es mi casa. En ella hay una sala, una cocina, un cuarto de baño y tres habitaciones.\nLa sala es pequeña, pero está muy limpia. En ella hay un televisor, una lámpara y dos sofás.\nÉse es el dormitorio de nuestro hijo Manolo. El dormitorio no está muy ordenado.\nAquél es nuestro estudio. En él hay cuatro estanterías. En las estanterías hay muchos libros y revistas interesantes.\nYa estamos! ¡Mi nueva casa! Es muy grande! Sí, es bastante grande, tiene dos plantas y un jardín. Qué bonitas son las flores!\n
+【第六课】\n¿Qué día es hoy? Hoy es lunes. ¿Qué día es mañana? Mañana es martes.\n¿A cuántos estamos? Estamos a siete de julio.\n¿A cuántos estamos hoy? Hoy estamos a veintidós de julio.\n¿Qué hora es? Es la una en punto. Son las tres y cinco. ¿Tienes hora? Es la una y media. ¿Tiene hora? Son las cuatro menos cuarto.\nHoy estamos a veintisiete de octubre. ¿Qué hora tienes? No tengo reloj. Son las tres y cuarto, y a las tres y media es la clase de conversación.\n
+【第七课】\n¿Qué tiempo hace hoy? Hoy hace buen tiempo. ¿Qué tiempo hace mañana? Mañana hace mucho viento.\n¿Llueve mucho en China? En el Norte no. Ahí nieva mucho en invierno. En el Sur sí, en verano, llueve mucho.\n¿Hace mucho calor en verano en Beijing? Sí, hace mucho calor.\nEl invierno de Beijing es muy frío.\n¡Qué calor hace hoy! ¿verdad? ¡Claro! Estamos en verano.\nAquí, en Madrid, hace mucho calor en verano y mucho frío en invierno. Allí el clima es más suave; además, llueve mucho.\n
+【第八课】\n¿Adónde vas? Voy a correos. Y tú, ¿también? No, voy al mercado.\n¿Vas al banco? No, voy al supermercado. ¿Y tú? Voy a la tienda.\n¿Qué vas a hacer este fin de semana? Voy al cine. Yo también.\n¿De dónde vienes? Vengo de casa de José. Está enfermo.\nVoy a la oficina a trabajar.\nMañana es mi cumpleaños y voy a dar una fiesta, a las nueve. ¿Puedes venir? Por supuesto.\nNo. Tengo mucho trabajo en casa. Voy a ordenar las habitaciones y después voy a comprar bebidas y comida. Yo tampoco.`,
+        l1: `¿Es ella Ana? No, ella no es Ana. Es Ema.\n¿Es ella Ema? No, ella no es Ema. Es Ana.\n¿Es él Pepe? Sí, él es Pepe.\n¿Es él Paco? Sí, él es Paco.\n¿Son ellas Ana y Ema? Sí, ellas son Ana y Ema.\n¿Son Ema y Paco amigos? Sí, ellos son amigos.\nHola! Buenos días.\n¿Eres Manolo? Sí, soy Manolo. Y tú, ¿cómo te llamas? Soy Lola. Y ella, ¿quién es? Es Elena. Es mi amiga. Mucho gusto. Encantada.`,
+        l2: `Este señor es David. Es empresario. Aquella señorita es Susana. Es secretaria.\nEste señor es Manuel. Es estudiante. Esta señora es Rosa. Es médica.\nAquellos jóvenes son Pepe, Paco y Ema. Pepe es camarero, Paco es secretario, y Ema, enfermera.\n¿Es ésta la Escuela de Idiomas? Sí. ¿Eres estudiante de español?\nSoy profesor. Me llamo Daniel.\nÉsta es Elena. Es médica y también es estudiante de español. Es alemana.`,
+        l3: `Me llamo Li Hua. Soy de China, de Beijing. Soy médica.\nMe llamo Ana. Soy de Bolivia, de La Paz. Soy abogada.\nÉl es Juan. Es de Argentina, de Buenos Aires. Es gerente.\nEllos son Mario y Cecilia. Son de Venezuela, de Caracas. Son funcionarios.\n¿Qué tal? Bien, ¿y tú? Muy bien, gracias. Mira, Marcos, unos amigos. Ésta es Lucía. Encantado. Yo soy Marcos, soy alemán, de Berlín. ¿De dónde eres? Soy italiana, de Roma. Éste es Julio, es francés, de París.`,
+        l4: `¿Cómo está usted? Bien, gracias. ¿Y usted? Muy bien.\n¿Cómo es el novio de Linda? Es alto, rubio, guapo y alegre.\n¿Cómo está este señor? Está mal. Está enfermo.\n¿Cómo es la casa de Manuel? Es grande, de dos plantas y muy bonita.\n¿Dónde está la casa de Li Ming? Está en el centro de la ciudad.\n¿Dónde están Linda y su marido? Están en casa.\n¿No está Julio en casa? Sí, pero está en la cama. ¿Está enfermo? Sí, está resfriado. 今天我好多了：hoy estoy mejor. Tu habitación es muy agradable. Sí, pero ahora está bastante desordenada.`,
+        l5: `Ésta es mi casa. En ella hay una sala, una cocina, un cuarto de baño y tres habitaciones.\nLa sala es pequeña, pero está muy limpia. En ella hay un televisor, una lámpara y dos sofás.\nÉse es el dormitorio de nuestro hijo Manolo. El dormitorio no está muy ordenado.\nAquél es nuestro estudio. En él hay cuatro estanterías. En las estanterías hay muchos libros y revistas interesantes.\nYa estamos! ¡Mi nueva casa! Es muy grande! Sí, es bastante grande, tiene dos plantas y un jardín. Qué bonitas son las flores!`,
+        l6: `¿Qué día es hoy? Hoy es lunes. ¿Qué día es mañana? Mañana es martes.\n¿A cuántos estamos? Estamos a siete de julio.\n¿A cuántos estamos hoy? Hoy estamos a veintidós de julio.\n¿Qué hora es? Es la una en punto. Son las tres y cinco. ¿Tienes hora? Es la una y media. ¿Tiene hora? Son las cuatro menos cuarto.\nHoy estamos a veintisiete de octubre. ¿Qué hora tienes? No tengo reloj. Son las tres y cuarto, y a las tres y media es la clase de conversación.`,
+        l7: `¿Qué tiempo hace hoy? Hoy hace buen tiempo. ¿Qué tiempo hace mañana? Mañana hace mucho viento.\n¿Llueve mucho en China? En el Norte no. Ahí nieva mucho en invierno. En el Sur sí, en verano, llueve mucho.\n¿Hace mucho calor en verano en Beijing? Sí, hace mucho calor.\nEl invierno de Beijing es muy frío.\n¡Qué calor hace hoy! ¿verdad? ¡Claro! Estamos en verano.\nAquí, en Madrid, hace mucho calor en verano y mucho frío en invierno. Allí el clima es más suave; además, llueve mucho.`,
+        l8: `¿Adónde vas? Voy a correos. Y tú, ¿también? No, voy al mercado.\n¿Vas al banco? No, voy al supermercado. ¿Y tú? Voy a la tienda.\n¿Qué vas a hacer este fin de semana? Voy al cine. Yo también.\n¿De dónde vienes? Vengo de casa de José. Está enfermo.\nVoy a la oficina a trabajar.\nMañana es mi cumpleaños y voy a dar una fiesta, a las nueve. ¿Puedes venir? Por supuesto.\nNo. Tengo mucho trabajo en casa. Voy a ordenar las habitaciones y después voy a comprar bebidas y comida. Yo tampoco.`
+    };
 
-const VOCAB = new Set();
-const WORD_LESSON = {};
-function norm(s){ return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
-for(const [l,ws] of Object.entries(VOCAB_BY_LESSON)){
-  for(const w of ws){ const k=norm(w); VOCAB.add(k); WORD_LESSON[k]=l; }
-}
+    // ─────────── 初始化语音识别 ───────────
+    let recognition = null;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-// ==================== SPEECH RECOGNITION — ULTRA SENSITIVE ====================
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let rec = null;
-let listening = false;
-let liveBuffer = '';        // THE buffer: everything ever recognized gets appended here
-let interimText = '';       // current interim (not-yet-final) text
-let silenceTimer = null;    // auto-finalize after silence
-const SILENCE_DELAY = 1200; // 1.2s silence → auto-punctuate
+    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SR();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'es-ES';
+    }
 
-// DOM
-const liveBox = document.getElementById('liveBox');
-const statusDot = document.getElementById('statusDot');
-const statusText = document.getElementById('statusText');
-const sentCount = document.getElementById('sentCount');
-const btnRec = document.getElementById('btnRec');
-const btnLabel = document.getElementById('btnLabel');
-const micIcon = document.getElementById('micIcon');
-const btnFinal = document.getElementById('btnFinal');
-const editArea = document.getElementById('editArea');
-const editText = document.getElementById('editText');
-const historyList = document.getElementById('historyList');
-
-// ==================== RECOGNITION ENGINE ====================
-function createRecognition(){
-  const r = new SR();
-  r.lang = 'es-ES';
-  r.interimResults = true;
-  r.continuous = true;      // TRUE: let iOS try continuous mode; we handle restarts anyway
-  r.maxAlternatives = 1;
-  return r;
-}
-
-function bindEvents(r){
-
-  r.onresult = e => {
-    // MERGE everything: final items get appended to liveBuffer, interim stays live
-    let newInterim = '';
-    for(let i=e.resultIndex; i<e.results.length; i++){
-      const res = e.results[i];
-      if(res.isFinal){
-        const chunk = res[0].transcript.trim();
-        if(chunk){
-          liveBuffer += (liveBuffer ? ' ' : '') + chunk;
+    // ─────────── 课文加载 ───────────
+    function loadLessonText() {
+        const val = document.getElementById('lessonSelect').value;
+        const box = document.getElementById('originalText');
+        box.innerText = (val && lessonDatabase[val])
+            ? lessonDatabase[val]
+            : '请在上方选择课文…';
+    }
+    window.addEventListener('DOMContentLoaded', function() {
+        loadLessonText();
+        if (isIOS) {
+            document.getElementById('ipadTip').style.display = 'block';
         }
-      } else {
-        newInterim += res[0].transcript;
+    });
+
+    // ─────────── 语音控制 ───────────
+    function startRecognition() {
+        if (!recognition) {
+            const tip = isIOS
+                ? 'Safari 暂不支持语音识别。请在电脑 Chrome 上使用，或看页面底部的提示。'
+                : '您的浏览器不支持语音识别，请使用 Chrome 浏览器打开本页面。';
+            alert(tip);
+            return;
+        }
+        try {
+            recognition.start();
+            setStatus('🎙️ 正在实时监听… 请让老师靠近麦克风', '#2ecc71');
+        } catch (e) {
+            setStatus('⚠️ 启动失败，请刷新页面后重试', '#e74c3c');
+        }
+    }
+
+    function stopRecognition() {
+        if (!recognition) return;
+        recognition.stop();
+        setStatus('⏸️ 已停止', '#e74c3c');
+    }
+
+    function clearText() {
+        document.getElementById('resultDisplay').innerHTML = '这里会实时显示识别出的西语，请注意重音符号和拼写…';
+        document.getElementById('helpTips').innerText = '数据已清空，等待新的录音输入…';
+    }
+
+    function setStatus(msg, color) {
+        const el = document.getElementById('statusText');
+        el.innerText = msg;
+        el.style.color = color;
+    }
+
+    // ─────────── 识别结果处理 ───────────
+    // ─────────── 历史记录 (localStorage) ───────────
+    const HISTORY_KEY = 'dictado_history_v1';
+    let historyList = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+
+    function saveHistory(text) {
+      if (!text.trim()) return;
+      const now = new Date();
+      const time = now.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
+      const date = now.toLocaleDateString('es-ES', {day:'numeric',month:'short'});
+      historyList.unshift({ text: text.trim(), time: date + ' ' + time, id: Date.now() });
+      if (historyList.length > 200) historyList = historyList.slice(0, 200);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(historyList));
+      renderHistory();
+    }
+
+    function clearHistory() {
+      historyList = [];
+      localStorage.removeItem(HISTORY_KEY);
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const el = document.getElementById('historyList');
+      if (!historyList.length) {
+        el.innerHTML = '<span style="color:#bdc3c7;font-style:italic;text-align:center;padding:12px">识别完成后句子会出现在这里</span>';
+        return;
       }
+      el.innerHTML = historyList.map(h =>
+        '<div style="background:#fff;border:1px solid #dcdde1;border-radius:8px;padding:8px 12px;font-size:14px;display:flex;justify-content:space-between;align-items:center" onclick="navigator.clipboard?.writeText(\'' + h.text.replace(/'/g,"\\'") + '\')">' +
+        '<span>' + h.text + '</span>' +
+        '<span style="font-size:11px;color:#95a5a6;margin-left:8px;white-space:nowrap">' + h.time + '</span>' +
+        '</div>'
+      ).join('');
     }
-    interimText = newInterim;
-    renderLive();
-    updateFinalBtn();
-    resetSilenceTimer();
-  };
+    renderHistory();
 
-  r.onerror = e => {
-    const err = e.error;
-    // iOS throws these constantly — ignore and let onend restart
-    if(err==='no-speech' || err==='aborted') return;
-    if(err==='not-allowed'){
-      statusText.textContent = 'Microfono denegado. Ajustes > Safari > Microfono';
-      setStatus('idle');
-      return;
+    let lastFinalText = ''; // track last saved text to avoid duplicates
+
+    if (recognition) {
+        recognition.onresult = function(event) {
+            let interim = '', final = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const t = event.results[i][0].transcript;
+                event.results[i].isFinal ? (final += t) : (interim += t);
+            }
+            const text = final || interim;
+            const corrected = autoCorrect(text);
+            const changed = (corrected !== text);
+            const badge = changed
+                ? ' <span style="font-size:12px;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;">✨ 已修正重音</span>'
+                : '';
+            document.getElementById('resultDisplay').innerHTML =
+                '<span style="font-size:13px;color:#95a5a6;">转写结果' + badge + '：</span><br>' + corrected;
+            analyzeText(text.toLowerCase());
+
+            // Auto-save final text to history (avoid duplicates)
+            if (final && final.trim() !== lastFinalText) {
+                lastFinalText = final.trim();
+                saveHistory(corrected);
+            }
+        };
+
+        recognition.onerror = function(event) {
+            if (event.error === 'not-allowed') {
+                setStatus('🔒 麦克风权限被拒绝。请在浏览器设置中允许麦克风访问。', '#e74c3c');
+            } else if (event.error !== 'aborted') {
+                setStatus('⚠️ 识别出错: ' + event.error, '#e74c3c');
+            }
+        };
+
+        recognition.onend = function() {
+            const st = document.getElementById('statusText');
+            if (st.innerText.indexOf('监听') !== -1) {
+                setStatus('就绪 — 识别已自动结束，可再次点击开始', '#7f8c8d');
+            }
+        };
     }
-    if(err==='network' || err==='service-not-allowed'){
-      statusText.textContent = 'Error de red. Verifica VPN.';
-      setStatus('idle');
-      return;
+
+    // ─────────── 智能纠错分析 ───────────
+    function analyzeText(text) {
+        const tipsBox = document.getElementById('helpTips');
+        let tips = '【实时拼写保镖提醒】：\n';
+
+        if (/(^|[^a-z])sofa[s]?($|[^a-z])/.test(text)) {
+            tips += '⚠️ sofá（沙发）是罕见阳性名词！复数 sofás，用 cuántos/un/veintiún 修饰。\n';
+        }
+        if (text.includes('sofa') && !text.includes('sofá')) {
+            tips += '⚠️ sofa 缺少重音符号！正确写法：sofá。\n';
+        }
+        if (text.includes('problema')) {
+            tips += '⚠️ problema 是阳性"外貌骗子词"！用 muchos problemas / un problema。\n';
+        }
+        // 精准捕获没有加重音的数字（避免误匹配已带重音的）
+        if (/(^|[^áéíóúña-z])(veintidos|veintitres|dieciseis)($|[^áéíóúña-z])/.test(text)) {
+            tips += '⚠️ 检测到数字重音丢失！正确写法：veintidós, veintitrés, dieciséis。\n';
+        }
+        if (text.includes('veinti')) {
+            tips += '⚠️ 21~29 是合体长词：veintiún（+阳性名词）、veintidós、veintitrés 必须带重音！\n';
+        }
+        // 针对 ¿Qué hora es? 和 ¿Qué hora tienes? 的经典混淆
+        if (text.includes('que hora es') || text.includes('que hora son')) {
+            tips += '💡 问时间：¿Qué hora es?（单数）或 ¿Tienes hora?（你有表吗？）。\n';
+        }
+        if (text.includes('hora') || text.includes('son las')) {
+            tips += '⚠️ 几点钟用 Ser（Es la una / Son las dos），问时间才用 Tener。\n';
+        }
+        if (/lunes|martes|miércoles|jueves|viernes|sábado|domingo/.test(text)) {
+            tips += '⚠️ 星期首字母不要大写！"在星期几"不加 en，直接用 el lunes / los viernes。\n';
+        }
+        if (text.includes('estamos a')) {
+            tips += '⚠️ 日期格式：estamos a + 数字 + de + 月份，月份首字母小写！\n';
+        }
+
+        tipsBox.innerText = (tips === '【实时拼写保镖提醒】：\n')
+            ? '✨ 暂未触发重点地雷词，拼写看起来很工整，继续保持！'
+            : tips;
     }
-  };
 
-  r.onspeechstart = () => {
-    setStatus('listen');
-    statusText.textContent = 'Te escucho...';
-  };
+    // ─────────── 重音自动修正 ───────────
+    // 语音引擎常丢掉重音符号，这里根据课文词汇 + 常见西语词自动补上
+    const accentFixMap = {
+        // 课文高频词（无歧义：去掉重音就不再是合法西语词）
+        'dias':     'días',
+        'dia':      'día',
+        'tambien':  'también',
+        'jovenes':  'jóvenes',
+        'joven':    'joven',     // 单数无重音
+        'medico':   'médico',
+        'medica':   'médica',
+        'medicos':  'médicos',
+        'medicas':  'médicas',
+        'secretaria':'secretaría', // 注意：secretaria(职业) vs secretaría(办公室)
+        'aleman':   'alemán',
+        'alemanes': 'alemanes',  // 复数无重音
+        'frances':  'francés',
+        'franceses':'franceses', // 复数无重音
+        'ingles':   'inglés',
+        'ingleses': 'ingleses',  // 复数无重音
+        'sofa':     'sofá',
+        'sofas':    'sofás',
+        'lampara':  'lámpara',
+        'lamparas': 'lámparas',
+        'jardin':   'jardín',
+        'jardines': 'jardines',
+        'arbol':    'árbol',
+        'arboles':  'árboles',
+        'facil':    'fácil',
+        'dificil':  'difícil',
+        'util':     'útil',
+        'lapiz':    'lápiz',
+        'lapices':  'lápices',
+        'estanteria':'estantería',
+        'estanterias':'estanterías',
+        'leccion':  'lección',
+        'lecciones':'lecciones',
+        'revolucion':'revolución',
+        'miercoles':'miércoles',
+        'sabado':   'sábado',
+        'veintidos':'veintidós',
+        'veintitres':'veintitrés',
+        'dieciseis':'dieciséis',
+        'telefono': 'teléfono',
+        'rapido':   'rápido',
+        'rapida':   'rápida',
+        'musica':   'música',
+        'pelicula': 'película',
+        'calor':    'calor',     // 无重音
+        'correos':  'correos',   // 无重音
+        'ademas':   'además',
+        'bonita':   'bonita',    // 无重音
+        'semana':   'semana',    // 无重音
+        'fiesta':   'fiesta',    // 无重音
+        'bebidas':  'bebidas',   // 无重音
+        'comida':   'comida',    // 无重音
+        'camarero': 'camarero',  // 无重音
+        'enfermera':'enfermera', // 无重音
+        'oficina':  'oficina',   // 无重音
+        'pelicula': 'película',
+        'ejercito': 'ejército',
+        // 常见动词变位（无歧义）
+        'estan':    'están',
+        // 城市/国家
+        'berlin':   'Berlín',
+        'paris':    'París',
+    };
 
-  r.onspeechend = () => {
-    // Speech pause — start silence countdown for auto-finalize
-    resetSilenceTimer();
-  };
+    function autoCorrect(text) {
+        let result = text;
 
-  r.onend = () => {
-    // iOS ALWAYS fires onend (every ~30s or after silence)
-    // ZERO-delay restart
-    if(listening){
-      doRestart();
+        // ── 1. 单词级修正（整词匹配，忽略大小写差异） ──
+        result = result.replace(/[a-záéíóúñü]+/gi, function(word) {
+            const lower = word.toLowerCase();
+            // 保留首字母大写
+            if (accentFixMap[lower]) {
+                const fixed = accentFixMap[lower];
+                if (word[0] === word[0].toUpperCase() && word[0] !== word[0].toLowerCase()) {
+                    return fixed.charAt(0).toUpperCase() + fixed.slice(1);
+                }
+                return fixed;
+            }
+            return word;
+        });
+
+        // ── 2. 短语级修正：buenos dias → buenos días ──
+        result = result.replace(/buenos dias/gi, 'buenos días');
+        result = result.replace(/buenas tardes/gi, 'buenas tardes');
+        result = result.replace(/buenas noches/gi, 'buenas noches');
+
+        return result;
     }
-  };
-}
-
-function doRestart(){
-  if(!listening) return;
-  try {
-    rec.start();
-  } catch(e1){
-    // recreate and try again
-    try {
-      rec = createRecognition();
-      bindEvents(rec);
-      rec.start();
-    } catch(e2){
-      // last resort: micro-delay and retry
-      if(listening) doRestart(); // instant retry, no setTimeout
-    }
-  }
-}
-
-// ==================== LISTENING CONTROL ====================
-function toggleRec(){
-  if(listening){ stopListening(); }
-  else { startListening(); }
-}
-
-function startListening(){
-  if(!SR){
-    liveBox.innerHTML='<span style="color:#dc2626">Navegador no compatible. Usa Safari en iPad/iPhone.</span>';
-    return;
-  }
-  listening = true;
-  liveBuffer = '';
-  interimText = '';
-  lastPunctuated = '';
-
-  rec = createRecognition();
-  bindEvents(rec);
-  try { rec.start(); } catch(e){
-    rec = createRecognition();
-    bindEvents(rec);
-    try { rec.start(); } catch(e2){
-      statusText.textContent = 'Error al iniciar. Reintenta.';
-      listening = false;
-      updateUIForIdle();
-      return;
-    }
-  }
-
-  updateUIForListening();
-  setStatus('listen');
-  statusText.textContent = 'Escuchando todo... no pierdo nada';
-  btnFinal.disabled = true;
-}
-
-function stopListening(){
-  listening = false;
-  clearTimeout(silenceTimer);
-  try { rec.abort(); } catch(e){}
-  try { rec.stop(); } catch(e){}
-
-  finalizeAndSave();
-  updateUIForIdle();
-  setStatus('idle');
-  statusText.textContent = 'Listo';
-}
-
-function updateFinalBtn(){
-  if(listening && liveBuffer.trim()){
-    btnFinal.disabled = false;
-    sentCount.textContent = (liveBuffer.split(/\s+/).filter(w=>w).length) + ' palabras';
-  } else if(listening){
-    btnFinal.disabled = true;
-    sentCount.textContent = '';
-  }
-}
-
-function resetSilenceTimer(){
-  clearTimeout(silenceTimer);
-  if(!listening) return;
-  silenceTimer = setTimeout(() => {
-    if(listening && liveBuffer.trim()){
-      autoFinalize();
-    }
-  }, SILENCE_DELAY);
-}
-
-function autoFinalize(){
-  if(!listening) return;
-  const raw = liveBuffer.trim();
-  if(!raw) return;
-  const punctuated = addPunctuation(raw);
-  saveToHistory(punctuated);
-  showToast(punctuated.substring(0, 60) + (punctuated.length>60?'...':''));
-  // Clear buffer but keep listening
-  liveBuffer = '';
-  interimText = '';
-  renderLive();
-  updateFinalBtn();
-}
-
-function finalizeSentence(){
-  // Manually save current liveBuffer to history, keep listening
-  if(!listening) return;
-  const raw = liveBuffer.trim();
-  if(!raw) return;
-  const punctuated = addPunctuation(raw);
-  saveToHistory(punctuated);
-  showToast('✓ ' + punctuated.substring(0,50) + (punctuated.length>50?'...':''));
-  // Clear buffer for next sentence but keep listening
-  liveBuffer = '';
-  interimText = '';
-  renderLive();
-  updateFinalBtn();
-}
-
-function finalizeAndSave(){
-  const raw = liveBuffer.trim();
-  liveBuffer = '';
-  interimText = '';
-  if(!raw) return;
-  const punctuated = addPunctuation(raw);
-  lastPunctuated = punctuated;
-  saveToHistory(punctuated);
-  renderLivePunctuated(punctuated);
-  sentCount.textContent = '';
-  btnFinal.disabled = true;
-}
-
-// ==================== PUNCTUATION ENGINE ====================
-function addPunctuation(text){
-  if(!text) return text;
-  let t = text.trim().replace(/\s+/g, ' ');
-  t = t.replace(/\s+\w{1}$/, ''); // trailing junk
-
-  // Spanish question words — match both accented and unaccented (speech API returns no accents)
-  const QW = '(qui[eé]n|qui[ée]nes|qu[ée]|c[oó]mo|d[oó]nde|ad[oó]nde|cu[áa]ndo|cu[áa]nt[oa]s?|cu[áa]l|cu[áa]les|por qu[ée]|para qu[ée])';
-  const hasQW = new RegExp('\\b'+QW+'\\b', 'i');
-  // Greetings / interjections that can precede a question
-  const greeting = /^(hola|buenos d[ií]as|buenas tardes|buenas noches|oye|oiga|perd[oó]n|disculpa|disculpe|mira|mire|gracias|muchas gracias|eh|ah)[,.\s]+/i;
-
-  // --- Detect if this is a mixed sentence (greeting + question clause) ---
-  let prefix = '';
-  let rest = t;
-  const gMatch = t.match(greeting);
-  if(gMatch){
-    prefix = gMatch[0];
-    rest = t.slice(gMatch[0].length);
-    // Capitalize prefix
-    prefix = prefix.charAt(0).toUpperCase() + prefix.slice(1).replace(/,$/,'') + ', ';
-  } else {
-    // No greeting detected, capitalize the whole thing
-    t = t.charAt(0).toUpperCase() + t.slice(1);
-  }
-
-  // --- Now classify rest (or whole t if no prefix) ---
-  let clause = rest || t;
-  let isQ = false;
-  let isEx = false;
-
-  // Question: has question word anywhere in the clause
-  if(hasQW.test(clause)){
-    isQ = true;
-  }
-  // Ends with ¿verdad? / ¿no? pattern
-  if(/\b(verdad|no)\?$/i.test(clause) || /\b(verdad|no)$/i.test(clause)){
-    isQ = true;
-  }
-  // Exclamation: qué/cuánto/cómo + adjective
-  if(/^(qu[ée]|cu[áa]nt[oa]s?|c[oó]mo)\s+(bonit[oa]|guap[oa]|bell[oa]|hermos[oa]|gran[d]*e|buen[oa]|mal[oa]|fe[oa]|delicios[oa]|riqu[íi]sim|interesante|lind[oa]|genial|maravillos)/i.test(clause)){
-    isEx = true;
-    isQ = false;
-  }
-
-  // Apply punctuation to clause
-  if(isQ){
-    clause = '¿' + clause.charAt(0).toUpperCase() + clause.slice(1) + '?';
-  } else if(isEx){
-    clause = '¡' + clause.charAt(0).toUpperCase() + clause.slice(1) + '!';
-  } else if(!/[.?!¿¡]$/.test(clause)){
-    clause = clause.charAt(0).toUpperCase() + clause.slice(1) + '.';
-  } else {
-    clause = clause.charAt(0).toUpperCase() + clause.slice(1);
-  }
-
-  let result = prefix ? prefix + clause : clause;
-
-  // --- Post-processing ---
-  result = result.replace(/\s([,.?!])/g, '$1');
-  result = result.replace(/([,.?!])(\w)/g, '$1 $2');
-  result = result.replace(/([,.?!])\s*([,.?!])/g, '$2');
-  result = result.replace(/\s+/g, ' ');
-  result = result.trim();
-
-  // Ensure opening marks
-  if(/\?/.test(result) && !/¿/.test(result)) result = '¿' + result;
-  if(/\!/.test(result) && !/¡/.test(result)) result = '¡' + result;
-
-  return result;
-}
-
-// ==================== LIVE DISPLAY ====================
-let lastPunctuated = '';
-
-function renderLive(){
-  let html = '<div class="content">';
-  let shown = false;
-
-  if(liveBuffer){
-    html += '<span class="sentence">' + highlightVocab(liveBuffer) + '</span>';
-    shown = true;
-  }
-  if(interimText){
-    if(shown) html += ' <span class="interim">' + escHtml(interimText) + '</span>';
-    else html += '<span class="interim">' + escHtml(interimText) + '</span>';
-    shown = true;
-  }
-  if(!shown){
-    html += '<span class="placeholder">Escuchando todo... habla en espanol</span>';
-  }
-  html += '</div>';
-  liveBox.innerHTML = html + '<span class="edit-hint">Toca para editar</span>';
-}
-
-function renderLivePunctuated(ptext){
-  liveBox.innerHTML = '<div class="content"><span class="sentence" style="color:var(--text)">' + highlightVocab(ptext) + '</span><div style="font-size:.7rem;color:var(--green);margin-top:4px">Guardado</div></div>';
-  setTimeout(() => {
-    if(lastPunctuated === ptext){
-      lastPunctuated = '';
-      renderLive();
-    }
-  }, 2500);
-}
-
-function highlightVocab(text){
-  return text.split(/\b/).map(part => {
-    if(VOCAB.has(norm(part)) && part.length>1){
-      return '<span class="vocab" title="'+ (WORD_LESSON[norm(part)]||'') +'">'+escHtml(part)+'</span>';
-    }
-    return escHtml(part);
-  }).join('');
-}
-
-function escHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
-
-// ==================== EDIT MODE ====================
-liveBox.addEventListener('click', () => {
-  if(!liveBuffer.trim() && !listening) return;
-  const full = liveBuffer;
-  editText.value = full || '';
-  editArea.classList.add('show');
-});
-
-function cancelEdit(){
-  editArea.classList.remove('show');
-}
-
-function saveEdit(){
-  const newText = editText.value.trim();
-  editArea.classList.remove('show');
-  if(newText){
-    liveBuffer = newText;
-    interimText = '';
-    finalizeAndSave();
-  }
-}
-
-// ==================== UI STATE ====================
-function updateUIForListening(){
-  btnRec.classList.remove('paused');
-  btnLabel.textContent = 'Detener';
-  micIcon.innerHTML = '<rect x="6" y="6" width="12" height="12" rx="1"/>';
-  btnFinal.disabled = true;
-  liveBox.classList.add('active');
-}
-
-function updateUIForIdle(){
-  btnRec.classList.add('paused');
-  btnLabel.textContent = 'Comenzar';
-  micIcon.innerHTML = '<path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/>';
-  btnFinal.disabled = true;
-  liveBox.classList.remove('active');
-}
-
-function setStatus(s){ statusDot.className = 'status-dot '+s; }
-
-// ==================== HISTORY (localStorage) ====================
-const STORAGE_KEY = 'dictado_historial_v2';
-let history = [];
-
-function loadHistory(){
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    history = raw ? JSON.parse(raw) : [];
-  } catch(e){ history = []; }
-  renderHistory();
-}
-
-function saveHistory(){
-  try {
-    // Keep last 200 entries
-    if(history.length > 200) history = history.slice(0, 200);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
-  } catch(e){}
-}
-
-function saveToHistory(text){
-  const now = new Date();
-  const time = now.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
-  const date = now.toLocaleDateString('es-ES', {day:'numeric',month:'short'});
-  history.unshift({ text, time: date+' '+time, id: Date.now() });
-  saveHistory();
-  renderHistory();
-  sentCount.textContent = '';
-}
-
-function deleteHistoryItem(id){
-  history = history.filter(h => h.id !== id);
-  saveHistory();
-  renderHistory();
-  showToast('Eliminado');
-}
-
-function clearHistory(){
-  if(!history.length) return;
-  history = [];
-  saveHistory();
-  renderHistory();
-  showToast('Historial borrado');
-}
-
-function renderHistory(){
-  if(history.length===0){
-    historyList.innerHTML = '<div class="hist-empty">El historial aparecerá aquí</div>';
-    return;
-  }
-  historyList.innerHTML = history.map(h =>
-    `<div class="hist-item" onclick="copyItem('${escHtml(h.text).replace(/'/g,"\\'")}',event)">
-      <span class="text">${escHtml(h.text)}</span>
-      <span class="time">${h.time}</span>
-      <button class="del-btn" onclick="event.stopPropagation();deleteHistoryItem(${h.id})">×</button>
-    </div>`
-  ).join('');
-}
-
-function copyItem(text, evt){
-  if(evt.target.classList.contains('del-btn')) return;
-  navigator.clipboard?.writeText(text).then(() => {
-    showToast('Copiado');
-  }).catch(() => showToast('Selecciona para copiar'));
-}
-
-function exportHistory(){
-  if(!history.length) return showToast('No hay historial');
-  const text = history.map(h => h.text).join('\n');
-  navigator.clipboard?.writeText(text).then(() => {
-    showToast('Exportado ('+history.length+' frases)');
-  }).catch(() => showToast('Error al exportar'));
-}
-
-// ==================== VOCAB PANEL ====================
-function toggleVocab(){
-  document.getElementById('vocabOverlay').classList.toggle('show');
-}
-(function buildVocabPanel(){
-  const c = document.getElementById('vocabContent');
-  let h = '';
-  for(const [l,ws] of Object.entries(VOCAB_BY_LESSON)){
-    h += `<div class="lesson-group"><h4>${l} (${ws.length})</h4><div class="word-list">`;
-    h += ws.map(w => `<span class="word-tag">${w}</span>`).join('');
-    h += '</div></div>';
-  }
-  c.innerHTML = h;
-  document.getElementById('wordCount').textContent = 'L1-L8 · '+VOCAB.size+' palabras';
-})();
-
-// ==================== TOAST ====================
-function showToast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  clearTimeout(t._tid);
-  t._tid = setTimeout(() => t.classList.remove('show'), 1800);
-}
-
-// ==================== KEYBOARD ====================
-document.addEventListener('keydown', e => {
-  if(e.key===' ' && !listening && document.activeElement===document.body){
-    e.preventDefault(); startListening();
-  }else if(e.key==='Escape' && listening){
-    stopListening();
-  }else if(e.key==='Enter' && listening && liveBuffer.trim()){
-    finalizeSentence();
-  }
-});
-
-// ==================== INIT ====================
-loadHistory();
-document.getElementById('sentCount').textContent = '';
 </script>
+
 </body>
 </html>
