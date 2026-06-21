@@ -422,9 +422,10 @@
         };
 
         recognition.onend = function() {
+            // 只要没点「停止」，立刻重启，保持持续监听
             const st = document.getElementById('statusText');
             if (st.innerText.indexOf('监听') !== -1) {
-                setStatus('就绪 — 识别已自动结束，可再次点击开始', '#7f8c8d');
+                try { recognition.start(); } catch(e) {}
             }
         };
     }
