@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Dictado Español — 西班牙语听写</title>
+<style>
+:root {
+  --blue: #2563eb;
+  --green: #16a34a;
+  --red: #dc2626;
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --text: #1e293b;
+  --sub: #64748b;
+  --border: #e2e8f0;
+  --shadow: 0 4px 24px rgba(0,0,0,.06);
+  --radius: 16px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 17px; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+header {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: sticky; top: 0; z-index: 10;
+}
+header h1 { font-size: 1.15rem; font-weight: 700; }
+header .badge {
+  background: var(--green); color: #fff;
+  font-size: .7rem; padding: 4px 10px; border-radius: 99px;
+  font-weight: 600; white-space: nowrap;
+}
+
+/* Controls */
+.controls {
+  display: flex; gap: 10px; padding: 16px;
+  justify-content: center; flex-wrap: wrap;
+}
+.btn {
+  border: none; border-radius: 99px; padding: 14px 28px;
+  font-size: 1rem; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  transition: all .15s; min-height: 48px;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(.96); }
+.btn-start { background: var(--blue); color: #fff; }
+.btn-stop  { background: var(--red);  color: #fff; }
+.btn-clear { background: var(--border); color: var(--text); }
+.btn-vocab { background: var(--border); color: var(--text); }
+.btn:disabled { opacity: .45; pointer-events: none; }
+
+/* Status */
+.status-bar {
+  text-align: center; font-size: .85rem; color: var(--sub);
+  padding: 0 16px; min-height: 24px;
+}
+.status-bar .dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 6px; vertical-align: middle;
+}
+.dot.idle { background: #94a3b8; }
+.dot.listen { background: #ef4444; animation: pulse .8s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* Live display */
+.live-section { padding: 12px 16px; }
+.live-box {
+  background: var(--card); border: 2px solid var(--border);
+  border-radius: var(--radius); padding: 20px 24px;
+  min-height: 80px; font-size: 1.4rem; line-height: 1.5;
+  word-break: break-word; transition: border-color .2s;
+}
+.live-box.active { border-color: var(--blue); }
+.live-box .interim { color: var(--sub); }
+.live-box .confirmed { color: var(--text); }
+.live-box .vocab-match { color: var(--green); font-weight: 600; }
+.live-box .placeholder { color: #cbd5e1; font-style: italic; }
+
+/* History */
+.history-section { padding: 0 16px 16px; flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.history-section h3 { font-size: .9rem; color: var(--sub); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .5px; }
+.history-list {
+  flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
+  max-height: 280px; -webkit-overflow-scrolling: touch;
+}
+.history-item {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 14px; font-size: .95rem;
+  cursor: pointer; transition: background .1s;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.history-item:active { background: #f1f5f9; }
+.history-item .time { font-size: .7rem; color: var(--sub); white-space: nowrap; margin-left: 8px; }
+.history-item .copy-hint { font-size: .65rem; color: var(--blue); opacity: 0; transition: opacity .2s; }
+.history-item:active .copy-hint { opacity: 1; }
+.history-empty { color: #cbd5e1; text-align: center; padding: 24px; font-style: italic; }
+
+/* Vocab Panel (slide-up) */
+.overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.35);
+  z-index: 100; display: none; align-items: flex-end;
+}
+.overlay.show { display: flex; }
+.vocab-panel {
+  background: var(--card); border-radius: 20px 20px 0 0;
+  width: 100%; max-height: 70vh; padding: 20px 16px;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+.vocab-panel h2 { font-size: 1.1rem; margin-bottom: 12px; }
+.vocab-panel .lesson-group { margin-bottom: 14px; }
+.vocab-panel .lesson-group h4 { font-size: .85rem; color: var(--blue); margin-bottom: 4px; }
+.vocab-panel .word-list { display: flex; flex-wrap: wrap; gap: 4px 8px; }
+.vocab-panel .word-tag {
+  background: #f1f5f9; padding: 3px 8px; border-radius: 6px;
+  font-size: .8rem; color: var(--text);
+}
+.vocab-close {
+  position: sticky; top: 0; float: right;
+  background: var(--border); border: none; border-radius: 50%;
+  width: 32px; height: 32px; font-size: 1.1rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+  background: #1e293b; color: #fff; padding: 10px 20px;
+  border-radius: 99px; font-size: .85rem; z-index: 200;
+  opacity: 0; transition: opacity .25s; pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+/* iPad landscape */
+@media (min-width: 768px) {
+  .app-body { display: flex; flex: 1; gap: 0; }
+  .main-panel { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .history-section { max-width: 360px; border-left: 1px solid var(--border); }
+  .history-list { max-height: none; }
+}
+@media (min-width: 1024px) {
+  html { font-size: 18px; }
+  .live-box { min-height: 120px; padding: 28px 36px; }
+  .history-section { max-width: 420px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Dictado Español</h1>
+  <span class="badge" id="wordCount">L1-L8</span>
+</header>
+
+<div class="status-bar">
+  <span class="dot idle" id="statusDot"></span>
+  <span id="statusText">Listo para comenzar</span>
+</div>
+
+<div class="controls">
+  <button class="btn btn-start" id="btnStart" onclick="startListen()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+    Comenzar
+  </button>
+  <button class="btn btn-stop" id="btnStop" onclick="stopListen()" disabled>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+    Detener
+  </button>
+  <button class="btn btn-clear" onclick="clearHistory()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+    Limpiar
+  </button>
+  <button class="btn btn-vocab" onclick="toggleVocab()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    Vocabulario
+  </button>
+</div>
+
+<div class="app-body">
+<div class="main-panel">
+<div class="live-section">
+  <div class="live-box" id="liveBox">
+    <span class="placeholder">Pulsa "Comenzar" y habla en español...</span>
+  </div>
+</div>
+</div>
+
+<div class="history-section">
+  <h3>Historial</h3>
+  <div class="history-list" id="historyList">
+    <div class="history-empty">El historial aparecerá aquí</div>
+  </div>
+</div>
+</div>
+
+<!-- Vocab Overlay -->
+<div class="overlay" id="vocabOverlay" onclick="if(event.target===this)toggleVocab()">
+  <div class="vocab-panel" id="vocabPanel">
+    <button class="vocab-close" onclick="toggleVocab()">✕</button>
+    <h2>Vocabulario L1–L8</h2>
+    <div id="vocabContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== VOCABULARY DATA (L1-L8) =====
+const VOCAB_BY_LESSON = {
+  'Lección 1': ['amigo','amiga','libro','empleado','empleada','mesa','silla','médico','médica','gato','gata','Pepe','Ema','Ana','Manolo','Susana','Paco','Lola','es','son','él','ella','eres','soy','quién','quiénes'],
+  'Lección 2': ['señor','señora','señorita','estudiante','médico','médica','enfermero','enfermera','empresario','empresaria','secretario','secretaria','camarero','camarera','escuela','idioma','español','española','alemán','alemana','joven','jóvenes','este','esta','estos','estas','ese','esa','esos','esas','aquel','aquella','aquellos','aquellas','qué','usted','también','profesor','profesora','gerente','Me llamo','mucho gusto','encantado','encantada'],
+  'Lección 3': ['China','china','Venezuela','venezolano','venezolana','Argentina','argentino','argentina','agua','vaso','casa','cosa','soy','eres','es','somos','sois','son','yo','tú','él','ella','usted','nosotros','nosotras','vosotros','vosotras','ellos','ellas','ustedes','de','dónde','de dónde'],
+  'Lección 4': ['bueno','buena','malo','mala','guapo','guapa','feo','fea','alto','alta','bajo','baja','gordo','gorda','delgado','delgada','grande','pequeño','pequeña','bonito','bonita','nuevo','nueva','viejo','vieja','interesante','coche','reloj','cama','sofá','televisor','habitación','piso','planta','jardín','cocina','cuarto','baño','sala','comedor','estoy','estás','está','estamos','estáis','están','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez','cómo','estar','ser'],
+  'Lección 5': ['casa','alquiler','planta','metro','centro','dormitorio','ventana','puerta','calle','mueble','espejo','alfombra','cuadro','lámpara','este','esta','estos','estas','ese','esa','esos','esas','aquel','aquella','aquellos','aquellas','éste','ésta','éstos','éstas','ése','ésa','ésos','ésas','aquél','aquélla','aquéllos','aquéllas','mi','mis','tu','tus','su','sus','nuestro','nuestra','nuestros','nuestras','vuestro','vuestra','vuestros','vuestras','hay','en','cuánto','cuánta','cuántos','cuántas'],
+  'Lección 6': ['hora','reloj','mañana','tarde','noche','mediodía','medianoche','primavera','verano','otoño','invierno','mes','día','semana','año','cuarto','media','tengo','tienes','tiene','tenemos','tenéis','tienen','once','doce','trece','catorce','quince','dieciséis','diecisiete','dieciocho','diecinueve','veinte','treinta','cuarenta','cincuenta','sesenta','setenta','ochenta','noventa','enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre','lunes','martes','miércoles','jueves','viernes','sábado','domingo'],
+  'Lección 7': ['tiempo','frío','calor','viento','sol','lluvia','nieve','norte','sur','este','oeste','hago','haces','hace','hacemos','hacéis','hacen','llueve','nieva','no','diciembre','hace frío','hace calor','hace viento','hace buen tiempo','hace mal tiempo'],
+  'Lección 8': ['correos','mercado','banco','supermercado','tienda','oficina','cine','fin de semana','cumpleaños','fiesta','gente','compañero','compañera','trabajo','bebida','comida','café','voy','vas','va','vamos','vais','van','vengo','vienes','viene','venimos','venís','vienen','puedo','puedes','puede','podemos','podéis','pueden','adónde','ir','venir','poder','dar','invitar','ordenar','comprar','trabajar','después','tampoco','por supuesto','por la noche','por qué','Diga','Hasta mañana','otro','otra']
+};
+
+// Build flat vocab set + lesson lookup
+const VOCAB_WORDS = new Set();
+const WORD_LESSON = {};
+// Normalize: lowercase, strip basic accents
+function normalize(s) { return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+for (const [lesson, words] of Object.entries(VOCAB_BY_LESSON)) {
+  for (const w of words) {
+    const key = normalize(w);
+    VOCAB_WORDS.add(key);
+    WORD_LESSON[key] = lesson;
+  }
+}
+
+// ===== SPEECH RECOGNITION =====
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let isListening = false;
+let finalTranscript = '';
+
+const liveBox = document.getElementById('liveBox');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const btnStart = document.getElementById('btnStart');
+const btnStop = document.getElementById('btnStop');
+const historyList = document.getElementById('historyList');
+
+function initRecognition() {
+  if (!SpeechRecognition) {
+    liveBox.innerHTML = '<span style="color:#dc2626">⚠️ Tu navegador no soporta reconocimiento de voz.<br><small>Usa Safari en iPad/iPhone o Chrome en Android/PC.</small></span>';
+    btnStart.disabled = true;
+    return;
+  }
+  recognition = new SpeechRecognition();
+  recognition.lang = 'es-ES';
+  recognition.interimResults = true;
+  recognition.continuous = true;
+  recognition.maxAlternatives = 1;
+
+  recognition.onresult = (event) => {
+    let interim = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const result = event.results[i];
+      if (result.isFinal) {
+        finalTranscript += result[0].transcript.trim() + ' ';
+      } else {
+        interim += result[0].transcript;
+      }
+    }
+    updateLive(finalTranscript.trim(), interim.trim());
+  };
+
+  recognition.onerror = (event) => {
+    console.log('Recognition error:', event.error);
+    if (event.error === 'no-speech' || event.error === 'aborted') return;
+    let msg = 'Error: ' + event.error;
+    if (event.error === 'not-allowed') msg = 'Permiso de micrófono denegado. Ve a Ajustes → Safari → Micrófono.';
+    if (event.error === 'network') msg = 'Error de red. Verifica tu conexión.';
+    statusText.textContent = msg;
+    setStatus('idle');
+  };
+
+  recognition.onend = () => {
+    // Save final transcript if any
+    if (finalTranscript.trim()) {
+      saveToHistory(finalTranscript.trim());
+      finalTranscript = '';
+    }
+    // Auto-restart if still listening
+    if (isListening) {
+      try { recognition.start(); } catch(e) {}
+    }
+  };
+
+  recognition.onaudiostart = () => setStatus('listen');
+  recognition.onaudioend = () => setStatus('idle');
+}
+
+function startListen() {
+  if (!recognition) return;
+  if (isListening) return;
+
+  // On iOS, we must create a new instance each time due to Safari quirks
+  try {
+    recognition.start();
+  } catch(e) {
+    // Recreate on error
+    recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.interimResults = true;
+    recognition.continuous = true;
+    recognition.maxAlternatives = 1;
+    initRecognition();
+    try { recognition.start(); } catch(e2) { return; }
+  }
+
+  isListening = true;
+  finalTranscript = '';
+  liveBox.classList.add('active');
+  btnStart.disabled = true;
+  btnStop.disabled = false;
+  statusText.textContent = 'Escuchando... habla en español';
+  setStatus('listen');
+}
+
+function stopListen() {
+  if (!recognition) return;
+  isListening = false;
+  try { recognition.stop(); } catch(e) {}
+
+  // Save any remaining final transcript
+  if (finalTranscript.trim()) {
+    saveToHistory(finalTranscript.trim());
+    finalTranscript = '';
+  }
+
+  liveBox.classList.remove('active');
+  btnStart.disabled = false;
+  btnStop.disabled = true;
+  statusText.textContent = 'Listo para comenzar';
+  setStatus('idle');
+}
+
+function setStatus(s) {
+  statusDot.className = 'dot ' + s;
+}
+
+function updateLive(finalText, interimText) {
+  let html = '';
+  if (finalText) {
+    html += '<span class="confirmed">' + highlightVocab(finalText) + '</span> ';
+  }
+  if (interimText) {
+    html += '<span class="interim">' + escapeHtml(interimText) + '</span>';
+  }
+  if (!html) {
+    html = '<span class="placeholder">Escuchando...</span>';
+  }
+  liveBox.innerHTML = html;
+  liveBox.scrollTop = liveBox.scrollHeight;
+}
+
+// Highlight vocabulary words in confirmed text
+function highlightVocab(text) {
+  return text.split(/\b/).map(part => {
+    const key = normalize(part);
+    if (VOCAB_WORDS.has(key) && part.length > 1) {
+      return '<span class="vocab-match" title="' + (WORD_LESSON[key] || '') + '">' + escapeHtml(part) + '</span>';
+    }
+    return escapeHtml(part);
+  }).join('');
+}
+
+function escapeHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+// ===== HISTORY =====
+let history = [];
+function saveToHistory(text) {
+  const now = new Date();
+  const time = now.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
+  history.unshift({ text, time, id: Date.now() });
+  renderHistory();
+}
+
+function clearHistory() {
+  history = [];
+  renderHistory();
+  showToast('Historial borrado');
+}
+
+function renderHistory() {
+  if (history.length === 0) {
+    historyList.innerHTML = '<div class="history-empty">El historial aparecerá aquí</div>';
+    return;
+  }
+  historyList.innerHTML = history.map(h =>
+    `<div class="history-item" onclick="copyItem('${escapeHtml(h.text).replace(/'/g,"\\'")}', this)" data-id="${h.id}">
+      <span>${escapeHtml(h.text)}</span>
+      <span class="time">${h.time}<span class="copy-hint"> — Copiado</span></span>
+    </div>`
+  ).join('');
+}
+
+function copyItem(text, el) {
+  navigator.clipboard?.writeText(text).then(() => {
+    const hint = el.querySelector('.copy-hint');
+    if (hint) { hint.style.opacity = '1'; setTimeout(() => hint.style.opacity = '0', 1500); }
+    showToast('Copiado: ' + text.substring(0, 40) + (text.length>40?'...':''));
+  }).catch(() => showToast('Toca para seleccionar y copiar'));
+}
+
+function exportHistory() {
+  if (history.length === 0) return showToast('No hay historial');
+  const text = history.map(h => h.text).join('\n');
+  navigator.clipboard?.writeText(text).then(() => showToast('Todo el historial copiado'));
+}
+
+// ===== VOCAB PANEL =====
+function toggleVocab() {
+  document.getElementById('vocabOverlay').classList.toggle('show');
+}
+// Build vocab panel
+(function buildVocabPanel() {
+  const container = document.getElementById('vocabContent');
+  let html = '';
+  for (const [lesson, words] of Object.entries(VOCAB_BY_LESSON)) {
+    html += `<div class="lesson-group"><h4>${lesson} (${words.length} palabras)</h4><div class="word-list">`;
+    html += words.map(w => `<span class="word-tag">${w}</span>`).join('');
+    html += '</div></div>';
+  }
+  container.innerHTML = html;
+  document.getElementById('wordCount').textContent = 'L1-L8 · ' + VOCAB_WORDS.size + ' palabras';
+})();
+
+// ===== TOAST =====
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', (e) => {
+  if (e.key === ' ' && !isListening && document.activeElement === document.body) {
+    e.preventDefault();
+    startListen();
+  } else if (e.key === 'Escape' && isListening) {
+    stopListen();
+  }
+});
+
+// ===== INIT =====
+initRecognition();
+</script>
+</body>
+</html>
