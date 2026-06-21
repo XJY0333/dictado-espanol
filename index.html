@@ -407,53 +407,73 @@ function autoFinalize(){
 // ==================== PUNCTUATION ENGINE ====================
 function addPunctuation(text){
   if(!text) return text;
-  let t = text.trim();
+  let t = text.trim().replace(/\s+/g, ' ');
+  t = t.replace(/\s+\w{1}$/, ''); // trailing junk
 
-  // Normalize spaces and remove trailing junk
-  t = t.replace(/\s+/g, ' ');
-  // Remove trailing incomplete words (often artifacts from cut-off recognition)
-  t = t.replace(/\s+\w{1}$/, '');
+  // Spanish question words — match both accented and unaccented (speech API returns no accents)
+  const QW = '(qui[eé]n|qui[ée]nes|qu[ée]|c[oó]mo|d[oó]nde|ad[oó]nde|cu[áa]ndo|cu[áa]nt[oa]s?|cu[áa]l|cu[áa]les|por qu[ée]|para qu[ée])';
+  const hasQW = new RegExp('\\b'+QW+'\\b', 'i');
+  // Greetings / interjections that can precede a question
+  const greeting = /^(hola|buenos d[ií]as|buenas tardes|buenas noches|oye|oiga|perd[oó]n|disculpa|disculpe|mira|mire|gracias|muchas gracias|eh|ah)[,.\s]+/i;
 
-  // Capitalize first letter
-  t = t.charAt(0).toUpperCase() + t.slice(1);
-
-  // Detect question patterns — Spanish question words + inverted question mark
-  const qWords = /\b(qu[ié]|qui[eé]n|qui[ée]nes|c[oó]mo|d[oó]nde|ad[oó]nde|cu[áa]ndo|cu[áa]nt[oa]s?|cu[áa]l|cu[áa]les|por qu[ée]|qu[ée]|verdad|no)\?/i;
-  // Starts with question word OR ends with question-like intonation words
-  const startsQ = /^(qu[ié]|qui[eé]n|qui[ée]nes|c[oó]mo|d[oó]nde|ad[oó]nde|cu[áa]ndo|cu[áa]nt[oa]s?|cu[áa]l|cu[áa]les|por qu[ée]|qu[ée])\b/i;
-
-  if(startsQ.test(t) || /\b(verdad\??|no\??)$/i.test(t)){
-    t = '¿' + t + '?';
-  }
-  // Exclamation patterns
-  else if(/^(qu[ée]|cu[áa]nt[oa]s?|c[oó]mo)\s+(bonit[oa]|guap[oa]|bell[oa]|hermos[oa]|grande|buen[oa]|mal[oa]|fe[oa]|delicios[oa]|riqu[íi]sim[oa]|interesante)/i.test(t)){
-    t = '¡' + t + '!';
-  }
-  // Add period if no ending punctuation
-  else if(!/[.?!¿¡]$/.test(t)){
-    t += '.';
+  // --- Detect if this is a mixed sentence (greeting + question clause) ---
+  let prefix = '';
+  let rest = t;
+  const gMatch = t.match(greeting);
+  if(gMatch){
+    prefix = gMatch[0];
+    rest = t.slice(gMatch[0].length);
+    // Capitalize prefix
+    prefix = prefix.charAt(0).toUpperCase() + prefix.slice(1).replace(/,$/,'') + ', ';
+  } else {
+    // No greeting detected, capitalize the whole thing
+    t = t.charAt(0).toUpperCase() + t.slice(1);
   }
 
-  // Fix common recognition errors
-  t = t.replace(/\s([,.?!])/g, '$1');          // remove space before punct
-  t = t.replace(/([,.?!])(\w)/g, '$1 $2');      // add space after punct
-  t = t.replace(/([,.?!])\s*([,.?!])/g, '$2'); // dedupe punctuation
-  t = t.replace(/\s+/g, ' ');                    // normalize spaces
-  t = t.replace(/^\s+|\s+$/g, '');              // trim
+  // --- Now classify rest (or whole t if no prefix) ---
+  let clause = rest || t;
+  let isQ = false;
+  let isEx = false;
 
-  // Fix missing opening question mark
-  if(/\?$/.test(t) && !/^¿/.test(t)){
-    t = '¿' + t;
+  // Question: has question word anywhere in the clause
+  if(hasQW.test(clause)){
+    isQ = true;
   }
-  // Fix missing opening exclamation mark
-  if(/\!$/.test(t) && !/^¡/.test(t)){
-    t = '¡' + t;
+  // Ends with ¿verdad? / ¿no? pattern
+  if(/\b(verdad|no)\?$/i.test(clause) || /\b(verdad|no)$/i.test(clause)){
+    isQ = true;
+  }
+  // Exclamation: qué/cuánto/cómo + adjective
+  if(/^(qu[ée]|cu[áa]nt[oa]s?|c[oó]mo)\s+(bonit[oa]|guap[oa]|bell[oa]|hermos[oa]|gran[d]*e|buen[oa]|mal[oa]|fe[oa]|delicios[oa]|riqu[íi]sim|interesante|lind[oa]|genial|maravillos)/i.test(clause)){
+    isEx = true;
+    isQ = false;
   }
 
-  // Capitalize first after ¿ or ¡
-  t = t.replace(/^([¿¡])(\w)/, (m,p1,p2) => p1 + p2.toUpperCase());
+  // Apply punctuation to clause
+  if(isQ){
+    clause = '¿' + clause.charAt(0).toUpperCase() + clause.slice(1) + '?';
+  } else if(isEx){
+    clause = '¡' + clause.charAt(0).toUpperCase() + clause.slice(1) + '!';
+  } else if(!/[.?!¿¡]$/.test(clause)){
+    clause = clause.charAt(0).toUpperCase() + clause.slice(1) + '.';
+  } else {
+    clause = clause.charAt(0).toUpperCase() + clause.slice(1);
+  }
 
-  return t;
+  let result = prefix ? prefix + clause : clause;
+
+  // --- Post-processing ---
+  result = result.replace(/\s([,.?!])/g, '$1');
+  result = result.replace(/([,.?!])(\w)/g, '$1 $2');
+  result = result.replace(/([,.?!])\s*([,.?!])/g, '$2');
+  result = result.replace(/\s+/g, ' ');
+  result = result.trim();
+
+  // Ensure opening marks
+  if(/\?/.test(result) && !/¿/.test(result)) result = '¿' + result;
+  if(/\!/.test(result) && !/¡/.test(result)) result = '¡' + result;
+
+  return result;
 }
 
 // ==================== LIVE DISPLAY ====================
