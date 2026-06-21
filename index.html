@@ -229,7 +229,7 @@ let listening = false;
 let liveBuffer = '';        // THE buffer: everything ever recognized gets appended here
 let interimText = '';       // current interim (not-yet-final) text
 let silenceTimer = null;    // auto-finalize after silence
-const SILENCE_DELAY = 3000; // 3s silence → auto-punctuate + save
+const SILENCE_DELAY = 1200; // 1.2s silence → auto-punctuate
 
 // DOM
 const liveBox = document.getElementById('liveBox');
@@ -323,7 +323,7 @@ function doRestart(){
       rec.start();
     } catch(e2){
       // last resort: micro-delay and retry
-      if(listening) setTimeout(doRestart, 30);
+      if(listening) doRestart(); // instant retry, no setTimeout
     }
   }
 }
