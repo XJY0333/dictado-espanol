@@ -222,17 +222,12 @@ for(const [l,ws] of Object.entries(VOCAB_BY_LESSON)){
   for(const w of ws){ const k=norm(w); VOCAB.add(k); WORD_LESSON[k]=l; }
 }
 
-// ==================== SPEECH RECOGNITION (MAX SENSITIVITY) ====================
+// ==================== SPEECH RECOGNITION — ULTRA SENSITIVE ====================
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null;
 let listening = false;
-let sentenceParts = [];
-let silenceTimer = null;
-let keepAliveTimer = null;
-let restartCount = 0;
-const SILENCE_DELAY = 2800;  // 2.8s silence → auto-finalize
-const KEEPALIVE_MS = 8000;   // Check every 8s if recognition is alive
-const RESTART_COOLDOWN = 50; // ms between restart attempts
+let liveBuffer = '';        // THE buffer: everything ever recognized gets appended here
+let interimText = '';       // current interim (not-yet-final) text
 
 // DOM
 const liveBox = document.getElementById('liveBox');
@@ -252,125 +247,81 @@ function createRecognition(){
   const r = new SR();
   r.lang = 'es-ES';
   r.interimResults = true;
-  r.continuous = false;     // iOS Safari: false = more reliable restart
+  r.continuous = true;      // TRUE: let iOS try continuous mode; we handle restarts anyway
   r.maxAlternatives = 1;
   return r;
 }
 
 function bindEvents(r){
+
   r.onresult = e => {
-    restartCount = 0; // got result → connected and working
-    let interim = '';
+    // MERGE everything: final items get appended to liveBuffer, interim stays live
+    let newInterim = '';
     for(let i=e.resultIndex; i<e.results.length; i++){
       const res = e.results[i];
       if(res.isFinal){
-        const t = res[0].transcript.trim();
-        if(t) sentenceParts.push(t);
+        const chunk = res[0].transcript.trim();
+        if(chunk){
+          liveBuffer += (liveBuffer ? ' ' : '') + chunk;
+        }
       } else {
-        interim += res[0].transcript;
+        newInterim += res[0].transcript;
       }
     }
-    updateLiveDisplay(interim);
-    resetSilenceTimer();
+    interimText = newInterim;
+    renderLive();
+    updateFinalBtn();
   };
 
   r.onerror = e => {
     const err = e.error;
-    if(err==='no-speech' || err==='aborted'){
-      // Common on iOS — just restart
-      return;
-    }
+    // iOS throws these constantly — ignore and let onend restart
+    if(err==='no-speech' || err==='aborted') return;
     if(err==='not-allowed'){
-      statusText.textContent = 'Micrófono denegado. Ajustes → Safari → Micrófono';
+      statusText.textContent = 'Microfono denegado. Ajustes > Safari > Microfono';
       setStatus('idle');
       return;
     }
     if(err==='network' || err==='service-not-allowed'){
-      statusText.textContent = 'Error de red. Verifica conexión y VPN.';
+      statusText.textContent = 'Error de red. Verifica VPN.';
       setStatus('idle');
       return;
     }
   };
 
-  // These events fire on actual speech start/end — use for visual feedback
   r.onspeechstart = () => {
     setStatus('listen');
     statusText.textContent = 'Te escucho...';
   };
-  r.onspeechend = () => {
-    // Speech pause detected — reset silence timer but keep listening
-    resetSilenceTimer();
-  };
 
-  r.onaudiostart = () => {
-    setStatus('listen');
-    statusText.textContent = 'Escuchando...';
+  r.onspeechend = () => {
+    // Brief pause in speech — still listening
   };
 
   r.onend = () => {
-    // Recognition session ended — restart IMMEDIATELY if still listening
+    // iOS ALWAYS fires onend (every ~30s or after silence)
+    // ZERO-delay restart
     if(listening){
-      attemptRestart();
+      doRestart();
     }
-  };
-
-  r.onstart = () => {
-    // Successfully started — update UI
   };
 }
 
-function attemptRestart(){
+function doRestart(){
   if(!listening) return;
-  clearTimeout(keepAliveTimer);
-
-  // Try restarting immediately
-  const tryStart = () => {
-    if(!listening) return;
+  try {
+    rec.start();
+  } catch(e1){
+    // recreate and try again
     try {
+      rec = createRecognition();
+      bindEvents(rec);
       rec.start();
-      restartCount = 0;
-      scheduleKeepAlive();
-    } catch(ex){
-      restartCount++;
-      // Recreate if too many failures or if the object is in a bad state
-      if(restartCount > 3 || ex.name === 'InvalidStateError'){
-        rec = createRecognition();
-        bindEvents(rec);
-        try {
-          rec.start();
-          restartCount = 0;
-          scheduleKeepAlive();
-        } catch(ex2){
-          // Keep trying with backoff
-          if(listening && restartCount < 10){
-            const delay = Math.min(RESTART_COOLDOWN * restartCount, 500);
-            setTimeout(tryStart, delay);
-          }
-        }
-      } else {
-        // Retry with small backoff
-        if(listening){
-          const delay = Math.min(RESTART_COOLDOWN * restartCount, 300);
-          setTimeout(tryStart, delay);
-        }
-      }
+    } catch(e2){
+      // last resort: micro-delay and retry
+      if(listening) setTimeout(doRestart, 30);
     }
-  };
-
-  // Staggered start to avoid iOS race conditions
-  setTimeout(tryStart, RESTART_COOLDOWN);
-}
-
-function scheduleKeepAlive(){
-  clearTimeout(keepAliveTimer);
-  if(!listening) return;
-  keepAliveTimer = setTimeout(() => {
-    if(listening){
-      // Force restart recognition to keep it fresh
-      try { rec.stop(); } catch(e){}
-      // onend will handle restart via attemptRestart
-    }
-  }, KEEPALIVE_MS);
+  }
 }
 
 // ==================== LISTENING CONTROL ====================
@@ -385,15 +336,13 @@ function startListening(){
     return;
   }
   listening = true;
-  sentenceParts = [];
-  restartCount = 0;
+  liveBuffer = '';
+  interimText = '';
   lastPunctuated = '';
 
-  // Pre-warm: create + start to establish server connection
   rec = createRecognition();
   bindEvents(rec);
   try { rec.start(); } catch(e){
-    // If first start fails (sometimes on iOS), retry
     rec = createRecognition();
     bindEvents(rec);
     try { rec.start(); } catch(e2){
@@ -404,83 +353,59 @@ function startListening(){
     }
   }
 
-  scheduleKeepAlive();
   updateUIForListening();
-  resetSilenceTimer();
   setStatus('listen');
-  statusText.textContent = 'Escuchando... habla en español';
+  statusText.textContent = 'Escuchando todo... no pierdo nada';
+  btnFinal.disabled = true;
 }
 
 function stopListening(){
   listening = false;
-  clearTimeout(silenceTimer);
-  clearTimeout(keepAliveTimer);
+  try { rec.abort(); } catch(e){}
   try { rec.stop(); } catch(e){}
-  try { rec.abort(); } catch(e){} // Force-stop on iOS
 
   finalizeAndSave();
   updateUIForIdle();
   setStatus('idle');
   statusText.textContent = 'Listo';
-  restartCount = 0;
+}
+
+function updateFinalBtn(){
+  if(listening && liveBuffer.trim()){
+    btnFinal.disabled = false;
+    sentCount.textContent = (liveBuffer.split(/\s+/).filter(w=>w).length) + ' palabras';
+  } else if(listening){
+    btnFinal.disabled = true;
+    sentCount.textContent = '';
+  }
 }
 
 function finalizeSentence(){
-  if(!listening && sentenceParts.length===0) return;
-  finalizeAndSave();
-  // If still listening, restart accumulation
-  sentenceParts = [];
-  updateLiveDisplay('');
-  showToast('Frase guardada');
+  // Manually save current liveBuffer to history, keep listening
+  if(!listening) return;
+  const raw = liveBuffer.trim();
+  if(!raw) return;
+  const punctuated = addPunctuation(raw);
+  saveToHistory(punctuated);
+  showToast('✓ ' + punctuated.substring(0,50) + (punctuated.length>50?'...':''));
+  // Clear buffer for next sentence but keep listening
+  liveBuffer = '';
+  interimText = '';
+  renderLive();
+  updateFinalBtn();
 }
 
 function finalizeAndSave(){
-  if(sentenceParts.length===0) return;
-  const raw = sentenceParts.join(' ').trim();
-  sentenceParts = [];
+  const raw = liveBuffer.trim();
+  liveBuffer = '';
+  interimText = '';
   if(!raw) return;
   const punctuated = addPunctuation(raw);
   lastPunctuated = punctuated;
   saveToHistory(punctuated);
-  updateLiveDisplay('', true);
+  renderLivePunctuated(punctuated);
   sentCount.textContent = '';
-  setTimeout(() => {
-    if(lastPunctuated === punctuated){
-      lastPunctuated = '';
-      updateLiveDisplay('');
-    }
-  }, 3000);
-}
-
-function resetSilenceTimer(){
-  clearTimeout(silenceTimer);
-  if(!listening) return;
-  silenceTimer = setTimeout(() => {
-    if(listening && sentenceParts.length>0){
-      // Auto-finalize after silence — no manual button needed
-      autoFinalize();
-    }
-  }, SILENCE_DELAY);
-}
-
-function autoFinalize(){
-  if(sentenceParts.length===0) return;
-  const raw = sentenceParts.join(' ').trim();
-  sentenceParts = [];
-  if(!raw) return;
-  const punctuated = addPunctuation(raw);
-  lastPunctuated = punctuated;
-  saveToHistory(punctuated);
-  updateLiveDisplay('', true); // show the punctuated result
-  sentCount.textContent = '';
-  // Clear after 3 seconds
-  setTimeout(() => {
-    if(lastPunctuated === punctuated){
-      lastPunctuated = '';
-      updateLiveDisplay('');
-    }
-  }, 3000);
-  showToast('✓ ' + punctuated.substring(0,50) + (punctuated.length>50?'...':''));
+  btnFinal.disabled = true;
 }
 
 // ==================== PUNCTUATION ENGINE ====================
@@ -556,31 +481,36 @@ function addPunctuation(text){
 }
 
 // ==================== LIVE DISPLAY ====================
-let lastPunctuated = ''; // store last finalized sentence for display
+let lastPunctuated = '';
 
-function updateLiveDisplay(interim, showPunctuated){
+function renderLive(){
   let html = '<div class="content">';
+  let shown = false;
 
-  if(showPunctuated && lastPunctuated){
-    html += '<span class="sentence" style="color:var(--text)">' + highlightVocab(lastPunctuated) + '</span>';
-    html += '<div style="font-size:.7rem;color:var(--green);margin-top:4px">✓ Guardado con puntuación</div>';
-  } else if(sentenceParts.length > 0){
-    const full = sentenceParts.join(' ') + (interim ? ' ' : '');
-    html += '<span class="sentence">' + highlightVocab(full) + '</span>';
+  if(liveBuffer){
+    html += '<span class="sentence">' + highlightVocab(liveBuffer) + '</span>';
+    shown = true;
   }
-  if(interim && !showPunctuated){
-    if(sentenceParts.length > 0) html += ' ';
-    html += '<span class="interim">' + escHtml(interim) + '</span>';
+  if(interimText){
+    if(shown) html += ' <span class="interim">' + escHtml(interimText) + '</span>';
+    else html += '<span class="interim">' + escHtml(interimText) + '</span>';
+    shown = true;
   }
-  if(sentenceParts.length === 0 && !interim && !showPunctuated){
-    html += '<span class="placeholder">Escuchando...</span>';
+  if(!shown){
+    html += '<span class="placeholder">Escuchando todo... habla en espanol</span>';
   }
   html += '</div>';
   liveBox.innerHTML = html + '<span class="edit-hint">Toca para editar</span>';
+}
 
-  if(sentenceParts.length > 0){
-    sentCount.textContent = sentenceParts.length + ' fragmento' + (sentenceParts.length>1?'s':'');
-  }
+function renderLivePunctuated(ptext){
+  liveBox.innerHTML = '<div class="content"><span class="sentence" style="color:var(--text)">' + highlightVocab(ptext) + '</span><div style="font-size:.7rem;color:var(--green);margin-top:4px">Guardado</div></div>';
+  setTimeout(() => {
+    if(lastPunctuated === ptext){
+      lastPunctuated = '';
+      renderLive();
+    }
+  }, 2500);
 }
 
 function highlightVocab(text){
@@ -596,8 +526,8 @@ function escHtml(s){ const d=document.createElement('div'); d.textContent=s; ret
 
 // ==================== EDIT MODE ====================
 liveBox.addEventListener('click', () => {
-  if(sentenceParts.length===0 && !listening) return;
-  const full = sentenceParts.join(' ');
+  if(!liveBuffer.trim() && !listening) return;
+  const full = liveBuffer;
   editText.value = full || '';
   editArea.classList.add('show');
 });
@@ -610,7 +540,8 @@ function saveEdit(){
   const newText = editText.value.trim();
   editArea.classList.remove('show');
   if(newText){
-    sentenceParts = [newText];
+    liveBuffer = newText;
+    interimText = '';
     finalizeAndSave();
   }
 }
@@ -738,7 +669,7 @@ document.addEventListener('keydown', e => {
     e.preventDefault(); startListening();
   }else if(e.key==='Escape' && listening){
     stopListening();
-  }else if(e.key==='Enter' && listening && sentenceParts.length>0){
+  }else if(e.key==='Enter' && listening && liveBuffer.trim()){
     finalizeSentence();
   }
 });
