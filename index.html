@@ -433,53 +433,82 @@
         };
     }
 
-    // ─────────── 智能纠错分析 ───────────
+    // ─────────── 智能纠错分析 (整合期末复习资料重点句型) ───────────
     function analyzeText(text) {
         const tipsBox = document.getElementById('helpTips');
         let tips = '【实时拼写保镖提醒】：\n';
+        const t = text.toLowerCase();
 
-        if (/(^|[^a-z])sofa[s]?($|[^a-z])/.test(text)) {
-            tips += '⚠️ sofá（沙发）是罕见阳性名词！复数 sofás，用 cuántos/un/veintiún 修饰。\n';
+        // ═══ 重音/拼写类 ═══
+        if (t.includes('sofa') && !t.includes('sofá')) tips += '⚠️ sofa 缺重音：sofá（阳性名词！）。\n';
+        if (t.includes('problema')) tips += '⚠️ problema 是阳性"外貌骗子词"：muchos problemas / un problema。\n';
+        if (/(^|[^áéíóúña-z])(veintidos|veintitres|dieciseis)($|[^áéíóúña-z])/.test(t)) tips += '⚠️ 数字重音丢失：veintidós, veintitrés, dieciséis。\n';
+        if (t.includes('veinti')) tips += '⚠️ 21~29 合体词必须带重音：veintiún, veintidós, veintitrés。\n';
+        if (/\btio\b/.test(t) && !t.includes('tío')) tips += '⚠️ tío 缺重音。\n';
+        if (/\btia\b/.test(t) && !t.includes('tía')) tips += '⚠️ tía 缺重音。\n';
+        if (t.includes('simpatic') && !t.includes('simpátic')) tips += '⚠️ simpático/a 缺重音。\n';
+        if (t.includes('aleman') && !t.includes('alemán')) tips += '⚠️ alemán 缺重音（复数 alemanes 无重音）。\n';
+        if (t.includes('frances') && !t.includes('francés')) tips += '⚠️ francés 缺重音。\n';
+        if (t.includes('ingles') && !t.includes('inglés')) tips += '⚠️ inglés 缺重音。\n';
+
+        // ═══ 语法句型类 ═══
+        // 年龄：tener años, NOT ser años
+        if (/\b(tiene|tengo|tienes)\s.+\ba[ñn]os?\b/.test(t) || /\bcuantos\s+a[ñn]os\b/.test(t)) {
+            tips += '💡 年龄 = Tener + 数字 + años（不是 ser años！）。¿Cuántos años tienes? — Tengo 20 años。\n';
         }
-        if (text.includes('sofa') && !text.includes('sofá')) {
-            tips += '⚠️ sofa 缺少重音符号！正确写法：sofá。\n';
+        // 职业不加冠词
+        if (/\b(es|soy|eres)\s+(un|una)\s+(medico|profesor|estudiante|empresario|secretario|abogado|gerente|enfermero|camarero|funcionario)/.test(t)) {
+            tips += '⚠️ Ser + 职业 不加冠词！Es médico.（不是 Es un médico）。\n';
         }
-        if (text.includes('problema')) {
-            tips += '⚠️ problema 是阳性"外貌骗子词"！用 muchos problemas / un problema。\n';
+        // 时间表达
+        if (/\bque hora (es|son)\b/.test(t) || /\bson las\b/.test(t)) {
+            tips += '💡 问时间：¿Qué hora es? 回答：Es la una / Son las dos...。半点=y media，差=menos。\n';
         }
-        // 精准捕获没有加重音的数字（避免误匹配已带重音的）
-        if (/(^|[^áéíóúña-z])(veintidos|veintitres|dieciseis)($|[^áéíóúña-z])/.test(text)) {
-            tips += '⚠️ 检测到数字重音丢失！正确写法：veintidós, veintitrés, dieciséis。\n';
+        if (/\ba las\b/.test(t)) tips += '💡 "在几点"用 a las：a las tres, a las nueve en punto。\n';
+        // 日期
+        if (t.includes('estamos a')) tips += '📅 Estamos a + 日 + de + 月（月份小写！1号用 primero）。\n';
+        // 星期
+        if (/lunes|martes|mi[ée]rcoles|jueves|viernes|s[áa]bado|domingo/.test(t)) tips += '📅 星期不加 en：el lunes / los viernes（首字母不大写）。\n';
+        // 天气
+        if (/\bque tiempo hace\b/.test(t) || /\bhace (frio|calor|viento|sol|buen|mal)\b/.test(t)) {
+            tips += '🌤️ 天气用 Hace + 名词：Hace frío/calor/viento/sol. Llueve/Nieva.（第三人称单数）。\n';
         }
-        if (text.includes('veinti')) {
-            tips += '⚠️ 21~29 是合体长词：veintiún（+阳性名词）、veintidós、veintitrés 必须带重音！\n';
-        }
-        // 针对 ¿Qué hora es? 和 ¿Qué hora tienes? 的经典混淆
-        if (text.includes('que hora es') || text.includes('que hora son')) {
-            tips += '💡 问时间：¿Qué hora es?（单数）或 ¿Tienes hora?（你有表吗？）。\n';
-        }
-        if (text.includes('hora') || text.includes('son las')) {
-            tips += '⚠️ 几点钟用 Ser（Es la una / Son las dos），问时间才用 Tener。\n';
-        }
-        if (/lunes|martes|miércoles|jueves|viernes|sábado|domingo/.test(text)) {
-            tips += '⚠️ 星期首字母不要大写！"在星期几"不加 en，直接用 el lunes / los viernes。\n';
-        }
-        if (text.includes('estamos a')) {
-            tips += '⚠️ 日期格式：estamos a + 数字 + de + 月份，月份首字母小写！\n';
-        }
-        // 第九课
-        if (text.includes('empieza') || text.includes('empezar')) {
-            tips += '⚠️ empezar（开始）是不规则动词 e→ie：empiezo, empiezas, empieza, empezamos, empezáis, empiezan。\n';
-        }
-        if (text.includes('conmigo') || text.includes('contigo')) {
-            tips += '💡 con + yo → conmigo；con + tú → contigo。其他不变：con él, con nosotros。\n';
-        }
-        if (text.includes('mucho') || text.includes('poco') || text.includes('un poco')) {
-            tips += '💡 mucho/poco 可作形容词、副词、代词。un poco (de) 表示"一点点"。\n';
-        }
-        if (text.includes('termina') || text.includes('terminar')) {
-            tips += '⚠️ terminar 是规则 -ar 动词变位。及物/不及物取决于是否带直接宾语。\n';
-        }
+        // 方位
+        if (/\ben el (norte|sur|este|oeste)\b/.test(t)) tips += '🧭 方位：en el norte/sur/este/oeste de + 地方。\n';
+        // ir a + inf 将来
+        if (/\b(voy|vas|va|vamos|vais|van)\s+a\s+\w+(ar|er|ir)\b/.test(t)) tips += '🔮 ir a + inf. = 即将做：Voy a comprar（我要去买）。Va a dar una fiesta。\n';
+        // a+el / de+el 缩合
+        if (/\ba el\b/.test(t)) tips += '⚠️ a + el = al：Voy al banco（不是 a el banco）。\n';
+        if (t.includes('de el')) tips += '⚠️ de + el = del：Vengo del centro（不是 de el centro）。\n';
+        // conmigo / contigo
+        if (/\bcon (yo|mi)\b/.test(t)) tips += '💡 con + yo = conmigo（不是 con yo/mí）。\n';
+        if (/\bcon (tu|ti)\b/.test(t)) tips += '💡 con + tú = contigo（不是 con tú/ti）。\n';
+        // hay vs tener
+        if (/\bhay\b/.test(t)) tips += '💡 HAY = 某处存在（无人称）：Hay un libro en la mesa。TENER = 某人拥有：Tengo un libro。\n';
+        // ser vs estar
+        if (/\b(soy|eres|es|somos|sois|son)\s+(bien|mal)\b/.test(t)) tips += '⚠️ Ser + 形容词 表本质，不用 bien/mal。¿Cómo estás? — Estoy bien。¿Cómo es él? — Es alto。\n';
+        if (t.includes('estoy') && /\b(medico|profesor|estudiante|chino|espanol)\b/.test(t)) tips += '⚠️ 职业/国籍用 SER 不用 ESTAR：Soy médico / Soy chino。\n';
+        // ser de 来源
+        if (/\b(es|soy|eres|somos)\s+de\b/.test(t)) tips += '📍 Ser + de = 来自：Soy de China / Es de Beijing。\n';
+        // 家庭成员
+        if (/\b(padre|madre|abuelo|abuela|hermano|hermana|tio|tia|primo|prima|hijo|hija)\b/.test(t)) tips += '👨‍👩‍👧 家庭成员注意阴阳性：padre/madre, abuelo/abuela, tío/tía, hermano/hermana。\n';
+        // cuántos 家庭人数
+        if (/\bcuantos son\b/.test(t) || /\bsomos\s+\w+\b/.test(t)) tips += '👥 问家庭人数：¿Cuántos son en tu familia? — Somos + 数字。\n';
+        // poder
+        if (/\bpuedo\b|\bpuedes\b|\bpuede\b/.test(t)) tips += '💪 poder（能）o→ue 不规则：puedo, puedes, puede, podemos, podéis, pueden。\n';
+        // querer
+        if (t.includes('quiero') || t.includes('quieres') || t.includes('quiere')) tips += '❤️ querer（想/要）e→ie 不规则：quiero, quieres, quiere, queremos, queréis, quieren。\n';
+        // empezar
+        if (t.includes('empieza') || t.includes('empiezo') || t.includes('empezamos') || t.includes('empezar')) tips += '⚠️ empezar（开始）e→ie 不规则：empiezo, empiezas, empieza, empezamos, empezáis, empiezan。\n';
+        // 规则变位提醒
+        if (/\b(estudia|estudio|estudias|estudian|estudiamos)\b/.test(t)) tips += '📖 estudiar 是规则 -ar 变位：estudio, estudias, estudia, estudiamos, estudiáis, estudian。\n';
+        if (/\b(trabaja|trabajo|trabajas|trabajan|trabajamos)\b/.test(t)) tips += '💼 trabajar 是规则 -ar 变位：trabajo, trabajas, trabaja, trabajamos, trabajáis, trabajan。\n';
+        if (/\b(habla|hablo|hablas|hablan|hablamos)\b/.test(t) && !t.includes('habl')) tips += '🗣️ hablar 是规则 -ar 变位：hablo, hablas, habla, hablamos, habláis, hablan。\n';
+        // 人称代词
+        if (t.includes('usted')) tips += '👤 usted（您）动词变位同 él/ella 第三人称单数。\n';
+        if (t.includes('ustedes')) tips += '👥 ustedes（您们/你们）动词变位同 ellos/ellas 第三人称复数。\n';
+        // 物主形容词
+        if (/\b(mi|mis|tu|tus|su|sus|nuestro|nuestra|nuestros|nuestras|vuestro|vuestra)\b/.test(t)) tips += '🔑 物主形容词与名词性数一致：mi casa, mis amigos, nuestro hijo, nuestra hija。\n';
 
         tipsBox.innerText = (tips === '【实时拼写保镖提醒】：\n')
             ? '✨ 暂未触发重点地雷词，拼写看起来很工整，继续保持！'
@@ -587,6 +616,120 @@
         'familia':  'familia',   // 无重音
         'adios':    'adiós',
         'hasta luego': 'hasta luego',
+        // 期末复习资料补充
+        'hermana':  'hermana',
+        'hermano':  'hermano',
+        'hermanos': 'hermanos',
+        'padre':    'padre',
+        'madre':    'madre',
+        'abuelo':   'abuelo',
+        'abuela':   'abuela',
+        'abuelos':  'abuelos',
+        'primo':    'primo',
+        'prima':    'prima',
+        'alegre':   'alegre',
+        'rubio':    'rubio',
+        'rubia':    'rubia',
+        'inteligente': 'inteligente',
+        'empresa':  'empresa',
+        'necesito': 'necesito',
+        'necesita': 'necesita',
+        'necesitar':'necesitar',
+        'querer':   'querer',
+        'quiero':   'quiero',
+        'quieres':  'quieres',
+        'quiere':   'quiere',
+        'queremos': 'queremos',
+        'quereis':  'queréis',
+        'quieren':  'quieren',
+        'empezar':  'empezar',
+        'empiezo':  'empiezo',
+        'empiezas': 'empiezas',
+        'empieza':  'empieza',
+        'empezamos':'empezamos',
+        'empezais': 'empezáis',
+        'empiezan': 'empiezan',
+        'terminar': 'terminar',
+        'termina':  'termina',
+        'terminamos':'terminamos',
+        'charlar':  'charlar',
+        'charlamos':'charlamos',
+        'recreo':   'recreo',
+        'conmigo':  'conmigo',
+        'contigo':  'contigo',
+        'estanteria':'estantería',
+        'terraza':  'terraza',
+        'instituto':'instituto',
+        'cincuenta':'cincuenta',
+        'sesenta':  'sesenta',
+        'setenta':  'setenta',
+        'ochenta':  'ochenta',
+        'noventa':  'noventa',
+        'cuarenta': 'cuarenta',
+        'universidad': 'universidad',
+        'estudiar': 'estudiar',
+        'estudio':  'estudio',
+        'estudias': 'estudias',
+        'estudia':  'estudia',
+        'estudiamos':'estudiamos',
+        'estudiais':'estudiáis',
+        'estudian': 'estudian',
+        'trabajar': 'trabajar',
+        'trabajo':  'trabajo',
+        'trabajas': 'trabajas',
+        'trabaja':  'trabaja',
+        'trabajamos':'trabajamos',
+        'trabajais':'trabajáis',
+        'trabajan': 'trabajan',
+        'hablar':   'hablar',
+        'hablo':    'hablo',
+        'hablas':   'hablas',
+        'habla':    'habla',
+        'hablamos': 'hablamos',
+        'hablais':  'habláis',
+        'hablan':   'hablan',
+        'llover':   'llover',
+        'llueve':   'llueve',
+        'nevar':    'nevar',
+        'nieva':    'nieva',
+        'hace':     'hace',
+        'hago':     'hago',
+        'haces':    'haces',
+        'hacemos':  'hacemos',
+        'haceis':   'hacéis',
+        'hacen':    'hacen',
+        'vengo':    'vengo',
+        'vienes':   'vienes',
+        'viene':    'viene',
+        'venimos':  'venimos',
+        'venis':    'venís',
+        'vienen':   'vienen',
+        'puedo':    'puedo',
+        'puedes':   'puedes',
+        'puede':    'puede',
+        'podemos':  'podemos',
+        'podeis':   'podéis',
+        'pueden':   'pueden',
+        'verdad':   'verdad',
+        'clima':    'clima',
+        'suave':    'suave',
+        'ademas':   'además',
+        'solo':     'sólo',
+        'por que':  'por qué',
+        'porque':   'porque',
+        'cuantos':  'cuántos',
+        'cuantas':  'cuántas',
+        'cuanto':   'cuánto',
+        'cuanta':   'cuánta',
+        'cual':     'cuál',
+        'cuales':   'cuáles',
+        'cuando':   'cuándo',
+        'donde':    'dónde',
+        'adonde':   'adónde',
+        'como':     'cómo',
+        'quien':    'quién',
+        'quienes':  'quiénes',
+        'que':      'qué',
     };
 
     function autoCorrect(text) {
