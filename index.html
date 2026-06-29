@@ -109,6 +109,16 @@
         .btn-clear  { background-color: var(--gray); color: #fff; }
         .btn-clear:hover, .btn-clear:active { background-color: var(--gray-hover); }
 
+        /* 声波动画 */
+        .wave-box { display:flex; align-items:center; justify-content:center; gap:3px; height:20px; margin-left:8px; }
+        .wave-bar { width:3px; height:4px; background:var(--green); border-radius:2px; transition:height .1s; }
+        .wave-active .wave-bar:nth-child(1){animation:wave .7s ease-in-out infinite alternate}
+        .wave-active .wave-bar:nth-child(2){animation:wave .7s ease-in-out .12s infinite alternate}
+        .wave-active .wave-bar:nth-child(3){animation:wave .7s ease-in-out .24s infinite alternate}
+        .wave-active .wave-bar:nth-child(4){animation:wave .7s ease-in-out .16s infinite alternate}
+        .wave-active .wave-bar:nth-child(5){animation:wave .7s ease-in-out .28s infinite alternate}
+        @keyframes wave{0%{height:4px}100%{height:20px}}
+
         .status {
             text-align: center;
             font-size: 15px;
@@ -236,7 +246,7 @@
         <button class="btn-clear" onclick="clearText()">✕ 清空</button>
     </div>
 
-    <div class="status" id="statusText">就绪 — 点「开始听写」即可</div>
+    <div class="status" id="statusText">就绪 — 点「开始听写」即可 <span class="wave-box" id="waveBox"><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span></span></div>
 
     <div class="live-label">🎤 老师正在念的实时文本：</div>
     <div class="display-box" id="resultDisplay">这里会实时显示识别出的西语，请注意重音符号和拼写…</div>
@@ -258,6 +268,26 @@
             <div class="panel-title">💡 纠错小助手</div>
             <div class="text-content" id="helpTips">开始听写后，这里会动态提醒词汇重音、阴阳性、单复数等易错点。</div>
         </div>
+    </div>
+
+    <!-- 手敲备用键盘 -->
+    <div style="margin-top:16px;background:#fff;border:1px solid #dcdde1;border-radius:10px;padding:12px 14px">
+      <span style="font-weight:700;font-size:14px;color:#34495e">⌨️ 手敲备用输入</span>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <textarea id="manualInput" placeholder="在此输入西语 (如: ¿cómo estás?)..." style="flex:1;height:50px;padding:8px;font-size:14px;border:1px solid #dcdde1;border-radius:8px;resize:none;font-family:inherit" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitManual()}"></textarea>
+        <button onclick="submitManual()" style="padding:8px 16px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap">录入</button>
+      </div>
+      <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">
+        <button onclick="insertSpecial('á')" style="padding:4px 8px;font-size:13px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer">á</button>
+        <button onclick="insertSpecial('é')" style="padding:4px 8px;font-size:13px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer">é</button>
+        <button onclick="insertSpecial('í')" style="padding:4px 8px;font-size:13px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer">í</button>
+        <button onclick="insertSpecial('ó')" style="padding:4px 8px;font-size:13px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer">ó</button>
+        <button onclick="insertSpecial('ú')" style="padding:4px 8px;font-size:13px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer">ú</button>
+        <button onclick="insertSpecial('ü')" style="padding:4px 8px;font-size:13px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer">ü</button>
+        <button onclick="insertSpecial('ñ')" style="padding:4px 8px;font-size:13px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer">ñ</button>
+        <button onclick="insertSpecial('¿')" style="padding:4px 8px;font-size:13px;background:#fef3c7;border:1px solid #fcd34d;border-radius:4px;cursor:pointer">¿</button>
+        <button onclick="insertSpecial('¡')" style="padding:4px 8px;font-size:13px;background:#fef3c7;border:1px solid #fcd34d;border-radius:4px;cursor:pointer">¡</button>
+      </div>
     </div>
 
     <div class="ipad-tip" id="ipadTip" style="display:none;">
@@ -331,6 +361,8 @@
         }
         try {
             recognition.start();
+            isListening = true;
+            setVisualState(true);
             setStatus('🎙️ 正在实时监听… 请让老师靠近麦克风', '#2ecc71');
         } catch (e) {
             setStatus('⚠️ 启动失败，请刷新页面后重试', '#e74c3c');
@@ -340,6 +372,8 @@
     function stopRecognition() {
         if (!recognition) return;
         recognition.stop();
+        isListening = false;
+        setVisualState(false);
         setStatus('⏸️ 已停止', '#e74c3c');
     }
 
@@ -347,6 +381,30 @@
         document.getElementById('resultDisplay').innerHTML = '这里会实时显示识别出的西语，请注意重音符号和拼写…';
         document.getElementById('helpTips').innerText = '数据已清空，等待新的录音输入…';
     }
+
+    function setVisualState(active) {
+        var wave = document.getElementById('waveBox');
+        if (wave) {
+            if (active) wave.classList.add('wave-active');
+            else wave.classList.remove('wave-active');
+        }
+    }
+
+    // ── 手敲键盘 ──
+    function insertSpecial(ch) {
+        var ta = document.getElementById('manualInput');
+        var s = ta.selectionStart, e = ta.selectionEnd;
+        ta.value = ta.value.substring(0,s) + ch + ta.value.substring(e);
+        ta.focus(); ta.selectionStart = ta.selectionEnd = s + ch.length;
+    }
+    function submitManual() {
+        var ta = document.getElementById('manualInput');
+        var txt = ta.value.trim();
+        if (txt) { processNewSentence(txt); ta.value = ''; }
+    }
+
+    var isListening = false;
+    var _editingId = null;
 
     function setStatus(msg, color) {
         const el = document.getElementById('statusText');
@@ -358,61 +416,107 @@
     const HISTORY_KEY = 'dictado_history';
     let historyList = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
 
-    function saveHistory(text) {
-      if (!text.trim()) return;
-      const now = new Date();
-      const time = now.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
-      const date = now.toLocaleDateString('es-ES', {day:'numeric',month:'short'});
-      historyList.unshift({ text: text.trim(), time: date + ' ' + time, id: Date.now() });
-      if (historyList.length > 200) historyList = historyList.slice(0, 200);
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(historyList));
-      renderHistory();
-    }
-
     function clearHistory() {
       historyList = [];
       localStorage.removeItem(HISTORY_KEY);
-      renderHistory();
+      renderHistoryFull();
     }
 
-    function renderHistory() {
-      const el = document.getElementById('historyList');
+    function deleteItem(id) { historyList = historyList.filter(function(h){return h.id!==id;}); saveHistoryToStorage(); renderHistoryFull(); }
+
+    function startEdit(id) { _editingId = id; renderHistoryFull(); }
+
+    function cancelEdit() { _editingId = null; renderHistoryFull(); }
+
+    function saveEdit(id) {
+        var input = document.getElementById('edit-input-'+id);
+        if (input) {
+            var newVal = input.value.trim();
+            if (newVal) {
+                var corrected = autoCorrect(newVal);
+                var item = historyList.find(function(d){return d.id===id;});
+                if (item) { item.text = corrected; item._edited = true; }
+                saveHistoryToStorage();
+            }
+        }
+        _editingId = null;
+        renderHistoryFull();
+    }
+
+    function renderHistoryFull() {
+      var el = document.getElementById('historyList');
       if (!historyList.length) {
         el.innerHTML = '<span style="color:#bdc3c7;font-style:italic;text-align:center;padding:12px">识别完成后句子会出现在这里</span>';
         return;
       }
       el.innerHTML = historyList.map(function(h) {
-        return '<div style="background:#fff;border:1px solid #dcdde1;border-radius:8px;padding:8px 12px;font-size:14px;display:flex;justify-content:space-between;align-items:center" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.innerText.trim())">' +
-        '<span>' + h.text + '</span>' +
-        '<span style="font-size:11px;color:#95a5a6;margin-left:8px;white-space:nowrap">' + h.time + '</span>' +
-        '</div>';
+        var repeatBadge = (h.repeats||1) > 1 ? '<span style="font-size:11px;background:#dcfce7;color:#166534;padding:1px 8px;border-radius:10px;font-weight:600;margin-left:6px">核对'+h.repeats+'遍</span>' : '';
+        if (_editingId === h.id) {
+          return '<div style="background:#fff;border:2px solid #3498db;border-radius:8px;padding:8px 12px;margin-bottom:4px">'+
+            '<textarea id="edit-input-'+h.id+'" style="width:100%;padding:8px;font-size:14px;border:1px solid #dcdde1;border-radius:6px;font-family:inherit;resize:vertical" rows="2">'+h.text+'</textarea>'+
+            '<div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end">'+
+            '<button onclick="saveEdit('+h.id+')" style="padding:6px 14px;background:#2ecc71;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">保存</button>'+
+            '<button onclick="cancelEdit()" style="padding:6px 14px;background:#eee;border:none;border-radius:6px;font-size:12px;cursor:pointer">取消</button></div></div>';
+        }
+        return '<div style="background:#fff;border:1px solid #dcdde1;border-radius:8px;padding:8px 12px;font-size:14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'+
+        '<span style="flex:1;cursor:pointer" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.innerText.trim())">'+h.text+'</span>'+repeatBadge+
+        '<span style="font-size:11px;color:#95a5a6;margin-left:8px;white-space:nowrap">'+h.time+'</span>'+
+        '<button onclick="event.stopPropagation();startEdit('+h.id+')" style="margin-left:4px;background:none;border:none;color:#95a5a6;cursor:pointer;font-size:14px;padding:2px 6px">✎</button>'+
+        '<button onclick="event.stopPropagation();deleteItem('+h.id+')" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:2px 6px">×</button></div>';
       }).join('');
     }
-    renderHistory();
+    renderHistoryFull();
 
-    let _lastSaved = '';
+    // ── Jaccard去重处理 ──
+    function processNewSentence(rawSpeech) {
+        if (!rawSpeech.trim()) return;
+        var corrected = autoCorrect(rawSpeech);
+        var isRepeat = false;
+        if (historyList.length > 0) {
+            var last = historyList[0];
+            var sim = getSimilarity(corrected, last.text);
+            if (sim >= 0.60) {
+                isRepeat = true;
+                last.repeats = (last.repeats || 1) + 1;
+                if (!last._edited && corrected.length > last.text.length) {
+                    last.text = corrected;
+                }
+                last.time = new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+                saveHistoryToStorage();
+            }
+        }
+        if (!isRepeat) {
+            historyList.unshift({ text: corrected, time: new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}), id: Date.now(), repeats: 1, _edited: false });
+            if (historyList.length > 200) historyList = historyList.slice(0,200);
+            saveHistoryToStorage();
+        }
+        var changed = (corrected !== rawSpeech.trim());
+        var badge = changed ? ' <span style="font-size:12px;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;">✨ 已修正</span>' : '';
+        document.getElementById('resultDisplay').innerHTML = '<span style="font-size:13px;color:#95a5a6;">转写结果'+badge+'：</span><br>' + corrected;
+        analyzeText(rawSpeech.toLowerCase());
+        renderHistoryFull();
+    }
+
+    function saveHistoryToStorage(){
+        var clean = historyList.map(function(h){ return {text:h.text, time:h.time, id:h.id, repeats:h.repeats||1}; });
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(clean));
+    }
 
     // ─────────── 识别结果处理 ───────────
     if (recognition) {
+        var _lastFinal = '';
         recognition.onresult = function(event) {
-            let interim = '', final = '';
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-                const t = event.results[i][0].transcript;
+            var interim = '', final = '';
+            for (var i = event.resultIndex; i < event.results.length; i++) {
+                var t = event.results[i][0].transcript;
                 event.results[i].isFinal ? (final += t) : (interim += t);
             }
-            const text = final || interim;
-            const corrected = autoCorrect(text);
-            const changed = (corrected !== text);
-            const badge = changed
-                ? ' <span style="font-size:12px;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;">✨ 已修正重音</span>'
-                : '';
-            document.getElementById('resultDisplay').innerHTML =
-                '<span style="font-size:13px;color:#95a5a6;">转写结果' + badge + '：</span><br>' + corrected;
-            analyzeText(text.toLowerCase());
-
-            if (final && final.trim() !== _lastSaved) {
-                _lastSaved = final.trim();
-                saveHistory(corrected);
+            if (final && final.trim() !== _lastFinal) {
+                _lastFinal = final.trim();
+                processNewSentence(final);
+            }
+            if (interim) {
+                document.getElementById('resultDisplay').innerHTML = '<span style="font-size:13px;color:#95a5a6;">正在听...</span><br><span style="color:#64748b;font-style:italic">' + interim + '</span>';
             }
         };
 
@@ -425,9 +529,7 @@
         };
 
         recognition.onend = function() {
-            // 只要没点「停止」，立刻重启，保持持续监听
-            const st = document.getElementById('statusText');
-            if (st.innerText.indexOf('监听') !== -1) {
+            if (isListening) {
                 try { recognition.start(); } catch(e) {}
             }
         };
@@ -732,28 +834,160 @@
         'que':      'qué',
     };
 
-    function autoCorrect(text) {
-        let result = text;
+    // 数字转西语单词
+    function getSpanishNumberWord(n, isHour) {
+        var units = ["cero","uno","dos","tres","cuatro","cinco","seis","siete","ocho","nueve"];
+        var teens = ["diez","once","doce","trece","catorce","quince","dieciséis","diecisiete","dieciocho","diecinueve"];
+        n = parseInt(n); if(isNaN(n)) return "";
+        if(n===1) return isHour?"una":"un";
+        if(n<10) return units[n];
+        if(n>=10&&n<20) return teens[n-10];
+        if(n>=20&&n<30){
+            if(n===20) return "veinte";
+            var sp={21:isHour?"veintiuna":"veintiuno",22:"veintidós",23:"veintitrés",24:"veinticuatro",25:"veinticinco",26:"veintiséis",27:"veintisiete",28:"veintiocho",29:"veintinueve"};
+            return sp[n];
+        }
+        var tm={30:"treinta",40:"cuarenta",50:"cincuenta",60:"sesenta",70:"setenta",80:"ochenta",90:"noventa"};
+        if(n%10===0) return tm[n];
+        var td=Math.floor(n/10)*10, ud=n%10, tw=tm[td], uw=units[ud];
+        if(ud===1) uw=isHour?"una":"uno";
+        return tw+" y "+uw;
+    }
 
-        // ── 1. 单词级修正（整词匹配，忽略大小写差异） ──
-        result = result.replace(/[a-záéíóúñü]+/gi, function(word) {
-            const lower = word.toLowerCase();
-            // 保留首字母大写
-            if (accentFixMap[lower]) {
-                const fixed = accentFixMap[lower];
-                if (word[0] === word[0].toUpperCase() && word[0] !== word[0].toLowerCase()) {
-                    return fixed.charAt(0).toUpperCase() + fixed.slice(1);
-                }
-                return fixed;
-            }
-            return word;
+    // 时间格式重构: "3:30" → "las tres y media"
+    function convertTimeToSpanish(text){
+        return text.replace(/\b(es\s+la|son\s+las|a\s+las|a\s+la)?\s*(\d{1,2}):(\d{2})\b/gi, function(m,prep,hStr,mStr){
+            var h=parseInt(hStr),min=parseInt(mStr);
+            if(h>12) h-=12; if(h===0) h=12;
+            var isNext=min>30, th=isNext?(h%12+1):h;
+            var prefix=prep?(prep.toLowerCase().indexOf("a ")==0?("a "+(th===1?"la":"las")):(""+(th===1?"es la":"son las"))):(""+(th===1?"es la":"son las"));
+            var hw=(th===1)?"una":getSpanishNumberWord(th,true);
+            var tp="";
+            if(min===0) tp=hw+" en punto";
+            else if(min===15) tp=hw+" y cuarto";
+            else if(min===30) tp=hw+" y media";
+            else if(min===45) tp=hw+" menos cuarto";
+            else if(min<30) tp=hw+" y "+getSpanishNumberWord(min,false);
+            else tp=hw+" menos "+getSpanishNumberWord(60-min,false);
+            return prefix+" "+tp;
         });
+    }
 
-        // ── 2. 短语级修正：buenos dias → buenos días ──
+    // 数字全拼单词化
+    function digitsToWords(text){
+        return text.replace(/\b\d+\b/g,function(m,offset,full){
+            var before=full.substring(Math.max(0,offset-1),offset);
+            var after=full.substring(offset+m.length,offset+m.length+1);
+            if(before===":"||after===":") return m;
+            var val=parseInt(m);
+            if(val>=0&&val<100){
+                var nw=full.substring(offset+m.length).trim().toLowerCase();
+                if(val===1) return nw.indexOf("de ")==0?"uno":"un";
+                return getSpanishNumberWord(val,false);
+            }
+            return m;
+        });
+    }
+
+    // Jaccard 词袋相似度（去重用）
+    function getSimilarity(s1,s2){
+        var c1=s1.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9\s]/g,"");
+        var c2=s2.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9\s]/g,"");
+        if(c1===c2) return 1;
+        var w1=c1.split(/\s+/).filter(Boolean), w2=c2.split(/\s+/).filter(Boolean);
+        var sA=new Set(w1), sB=new Set(w2);
+        if(!sA.size||!sB.size) return 0;
+        var inter=0; sA.forEach(function(w){if(sB.has(w)) inter++;});
+        return inter/new Set([...sA,...sB]).size;
+    }
+
+    // 学术倒标号包裹
+    function applyInvertedPunctuation(text){
+        var t=text.trim(), low=t.toLowerCase();
+        if(/^(cómo|quién|qué|dónde|adónde|cuánto|cuántos|cuántas|por\s+qué|eres|es\s+ella|es\s+él|son\s+ellas|vais|vienes|vienen|puedes|puede)/i.test(low)){
+            if(t.indexOf("¿")!==0&&t.indexOf("?")!==t.length-1){
+                if(t.charAt(t.length-1)===".") t=t.substring(0,t.length-1);
+                t="¿"+t+"?";
+            }
+        } else if(/^(qué\s+bonita|qué\s+calor|ya\s+estamos|hola)/i.test(low)){
+            if(t.indexOf("¡")!==0&&t.indexOf("!")!==t.length-1){
+                if(t.charAt(t.length-1)===".") t=t.substring(0,t.length-1);
+                t="¡"+t+"!";
+            }
+        }
+        return t;
+    }
+
+    // 标点格式
+    function formatAcademicPunctuation(text){
+        return text.replace(/\b([a-záéíóúñü]+)\s+(también|tampoco)\b/gi, function(m,p1,p2){
+            var nw=["y","o","pero","que","ni","no"];
+            if(nw.indexOf(p1.toLowerCase())>=0) return m;
+            return p1+", "+p2;
+        });
+    }
+
+    // 🌟 核心：语境感知 autoCorrect（合并学术级引擎 + 复习资料词库）
+    function autoCorrect(text) {
+        var words = text.split(/\s+/);
+        var corrected = [];
+        for (var i = 0; i < words.length; i++) {
+            var raw = words[i];
+            var w = raw.toLowerCase().replace(/[^a-záéíóúñü]/g, '');
+            var c = raw;
+
+            // ── 语境法则 1: el(冠词) vs él(他) ──
+            if (w === 'el') {
+                var nw = (i+1<words.length) ? words[i+1].toLowerCase().replace(/[^a-záéíóúñü]/g,'') : '';
+                var mascNouns = ['cine','banco','supermercado','dormitorio','estudio','jardín','parque','hospital','centro','marido','padre','abuelo','reloj','lunes','martes','miércoles','jueves','viernes','sábado','domingo','tiempo','clima','viento','sol','trabajo','país','recreo','café','cuarto','día','mes','año','grado','norte','sur','este','oeste','correos','mercado',' idioma'];
+                if (mascNouns.indexOf(nw)>=0) c = 'el';
+                else if (i>0 && words[i-1].toLowerCase().replace(/[^a-záéíóúñü]/g,'')==='es') c = 'él';
+                else c = 'él';
+            }
+            // ── 语境法则 2: esta/está/ésta ──
+            else if (w==='esta'||w==='estas'||w==='estan') {
+                var nw2 = (i+1<words.length) ? words[i+1].toLowerCase().replace(/[^a-záéíóúñü]/g,'') : '';
+                var pw = (i>0) ? words[i-1].toLowerCase().replace(/[^a-záéíóúñü]/g,'') : '';
+                var femNouns = ['casa','habitación','habitaciones','cocina','sala','estantería','estanterías','revista','revistas','mesa','silla','sillas','tarde','noche','mañana','fiesta','bebidas','comida','tienda','oficina','escuela','biblioteca','ciudad','planta','semana','clase','conversación','familia','empresa','foto','cama','hora'];
+                if (w==='estan') c = 'están';
+                else if (pw==='cómo'||pw==='como'||pw==='tú'||pw==='tu') c = 'estás';
+                else if (femNouns.indexOf(nw2)>=0) c = (w==='estas')?'estas':'esta';
+                else if (nw2==='es'||nw2==='o'||nw2==='') c = (w==='estas')?'éstas':'ésta';
+                else c = 'está';
+            }
+            // ── 语境法则 3: si(如果) vs sí(是) ──
+            else if (w==='si') {
+                var nw3 = (i+1<words.length) ? words[i+1].toLowerCase().replace(/[^a-záéíóúñü]/g,'') : '';
+                if (i===0||nw3==='él'||nw3==='ella'||nw3==='soy'||nw3==='es'||nw3==='son'||nw3==='por') c = 'sí';
+                else c = 'si';
+            }
+            // ── 语境法则 4: tu(你的) vs tú(你) ──
+            else if (w==='tu') {
+                var nw4 = (i+1<words.length) ? words[i+1].toLowerCase().replace(/[^a-záéíóúñü]/g,'') : '';
+                var nouns = ['casa','habitación','dormitorio','marido','novio','hermano','amigo','padre','madre','abuelo','reloj','trabajo','clase','escuela','oficina','nombre','familia','empresa'];
+                if (nouns.indexOf(nw4)>=0) c = 'tu';
+                else c = 'tú';
+            }
+            // ── 基础重音字典 ──
+            else if (accentFixMap[w]) {
+                c = accentFixMap[w];
+            }
+
+            // 保持原大写格式
+            if (raw[0]===raw[0].toUpperCase()&&raw[0]!==raw[0].toLowerCase()) {
+                c = c.charAt(0).toUpperCase() + c.substring(1);
+            }
+            corrected.push(c);
+        }
+
+        var result = corrected.join(' ');
+        result = convertTimeToSpanish(result);
+        result = digitsToWords(result);
+        result = formatAcademicPunctuation(result);
+        result = applyInvertedPunctuation(result);
         result = result.replace(/buenos dias/gi, 'buenos días');
         result = result.replace(/buenas tardes/gi, 'buenas tardes');
         result = result.replace(/buenas noches/gi, 'buenas noches');
-
         return result;
     }
 </script>
