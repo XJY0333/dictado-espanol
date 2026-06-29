@@ -211,12 +211,12 @@
 <body>
 
 <div class="container">
-    <h1>🎧 实时西语听写助理<br><span style="font-size:0.75em;color:#7f8c8d;">课文 1-8 课智能纠错库版</span></h1>
+    <h1>🎧 实时西语听写助理<br><span style="font-size:0.75em;color:#7f8c8d;">课文 1-9 课智能纠错库版</span></h1>
 
     <div class="lesson-selector">
         <label for="lessonSelect">📖 选择课文对照范围：</label>
         <select id="lessonSelect" onchange="loadLessonText()">
-            <option value="all" selected>📚 不限课文（全部 1-8 课范围）</option>
+            <option value="all" selected>📚 不限课文（全部 1-9 课范围）</option>
             <option value="">── 单独指定一课 ──</option>
             <option value="l1">第一课：¿Quién eres?（你是谁？）</option>
             <option value="l2">第二课：¿Qué es él?（他是做什么工作的？）</option>
@@ -226,6 +226,7 @@
             <option value="l6">第六课：¿Qué hora es?（几点了？）</option>
             <option value="l7">第七课：¿Qué tiempo hace?（天气怎么样？）</option>
             <option value="l8">第八课：¿Adónde vas?（你去哪儿？）</option>
+            <option value="l9">第九课：¿Qué estudias?（你是学什么的？）</option>
         </select>
     </div>
 
@@ -268,7 +269,7 @@
 </div>
 
 <script>
-    // ─────────── 1-8 课课文数据库 ───────────
+    // ─────────── 1-9 课课文数据库 ───────────
     const lessonDatabase = {
         all:
 `【第一课】\n¿Es ella Ana? No, ella no es Ana. Es Ema.\n¿Es ella Ema? No, ella no es Ema. Es Ana.\n¿Es él Pepe? Sí, él es Pepe.\n¿Es él Paco? Sí, él es Paco.\n¿Son ellas Ana y Ema? Sí, ellas son Ana y Ema.\n¿Son Ema y Paco amigos? Sí, ellos son amigos.\nHola! Buenos días.\n¿Eres Manolo? Sí, soy Manolo. Y tú, ¿cómo te llamas? Soy Lola. Y ella, ¿quién es? Es Elena. Es mi amiga. Mucho gusto. Encantada.\n
@@ -278,7 +279,8 @@
 【第五课】\nÉsta es mi casa. En ella hay una sala, una cocina, un cuarto de baño y tres habitaciones.\nLa sala es pequeña, pero está muy limpia. En ella hay un televisor, una lámpara y dos sofás.\nÉse es el dormitorio de nuestro hijo Manolo. El dormitorio no está muy ordenado.\nAquél es nuestro estudio. En él hay cuatro estanterías. En las estanterías hay muchos libros y revistas interesantes.\nYa estamos! ¡Mi nueva casa! Es muy grande! Sí, es bastante grande, tiene dos plantas y un jardín. Qué bonitas son las flores!\n
 【第六课】\n¿Qué día es hoy? Hoy es lunes. ¿Qué día es mañana? Mañana es martes.\n¿A cuántos estamos? Estamos a siete de julio.\n¿A cuántos estamos hoy? Hoy estamos a veintidós de julio.\n¿Qué hora es? Es la una en punto. Son las tres y cinco. ¿Tienes hora? Es la una y media. ¿Tiene hora? Son las cuatro menos cuarto.\nHoy estamos a veintisiete de octubre. ¿Qué hora tienes? No tengo reloj. Son las tres y cuarto, y a las tres y media es la clase de conversación.\n
 【第七课】\n¿Qué tiempo hace hoy? Hoy hace buen tiempo. ¿Qué tiempo hace mañana? Mañana hace mucho viento.\n¿Llueve mucho en China? En el Norte no. Ahí nieva mucho en invierno. En el Sur sí, en verano, llueve mucho.\n¿Hace mucho calor en verano en Beijing? Sí, hace mucho calor.\nEl invierno de Beijing es muy frío.\n¡Qué calor hace hoy! ¿verdad? ¡Claro! Estamos en verano.\nAquí, en Madrid, hace mucho calor en verano y mucho frío en invierno. Allí el clima es más suave; además, llueve mucho.\n
-【第八课】\n¿Adónde vas? Voy a correos. Y tú, ¿también? No, voy al mercado.\n¿Vas al banco? No, voy al supermercado. ¿Y tú? Voy a la tienda.\n¿Qué vas a hacer este fin de semana? Voy al cine. Yo también.\n¿De dónde vienes? Vengo de casa de José. Está enfermo.\nVoy a la oficina a trabajar.\nMañana es mi cumpleaños y voy a dar una fiesta, a las nueve. ¿Puedes venir? Por supuesto.\nNo. Tengo mucho trabajo en casa. Voy a ordenar las habitaciones y después voy a comprar bebidas y comida. Yo tampoco.`,
+【第八课】\n¿Adónde vas? Voy a correos. Y tú, ¿también? No, voy al mercado.\n¿Vas al banco? No, voy al supermercado. ¿Y tú? Voy a la tienda.\n¿Qué vas a hacer este fin de semana? Voy al cine. Yo también.\n¿De dónde vienes? Vengo de casa de José. Está enfermo.\nVoy a la oficina a trabajar.\nMañana es mi cumpleaños y voy a dar una fiesta, a las nueve. ¿Puedes venir? Por supuesto.\nNo. Tengo mucho trabajo en casa. Voy a ordenar las habitaciones y después voy a comprar bebidas y comida. Yo tampoco.\n
+【第九课】\nEstas son fotos de mi familia. Somos nueve: mis abuelos, mis padres, mis tíos, mi primo, mi hermana y yo.\nMi abuelo tiene setenta y un años; mi abuela, sesenta y nueve. Son muy amables.\nMi padre trabaja en una empresa. Tiene cuarenta y siete años. Es alto, guapo y alegre. Mi madre tiene cuarenta y dos años. No trabaja. Cuida la casa.\nMi tío es un hombre muy simpático. Tiene cuarenta y cinco años. La mujer morena es mi tía. Es profesora.\nMi primo tiene ocho años. Estudia en una escuela.\nEsta chica es mi hermana. Tiene doce años. Ella también va a la escuela.\n¡Hola, Susana! ¡Qué sorpresa! ¿Tú también estudias chino?\nSí, trabajo en una empresa sino-española y necesito este idioma para mi trabajo.\n¿Hablas varios idiomas? Inglés y un poco de francés.\n¿En qué clase estás? Estoy en el nivel elemental. En el aula cuatro.\n¿A qué hora empieza la clase? A las nueve en punto. A las diez y media hay un recreo. Durante el recreo tomamos un café o charlamos con los compañeros.\n¡Muy bien! Entonces, hasta luego. Adiós.`,
         l1: `¿Es ella Ana? No, ella no es Ana. Es Ema.\n¿Es ella Ema? No, ella no es Ema. Es Ana.\n¿Es él Pepe? Sí, él es Pepe.\n¿Es él Paco? Sí, él es Paco.\n¿Son ellas Ana y Ema? Sí, ellas son Ana y Ema.\n¿Son Ema y Paco amigos? Sí, ellos son amigos.\nHola! Buenos días.\n¿Eres Manolo? Sí, soy Manolo. Y tú, ¿cómo te llamas? Soy Lola. Y ella, ¿quién es? Es Elena. Es mi amiga. Mucho gusto. Encantada.`,
         l2: `Este señor es David. Es empresario. Aquella señorita es Susana. Es secretaria.\nEste señor es Manuel. Es estudiante. Esta señora es Rosa. Es médica.\nAquellos jóvenes son Pepe, Paco y Ema. Pepe es camarero, Paco es secretario, y Ema, enfermera.\n¿Es ésta la Escuela de Idiomas? Sí. ¿Eres estudiante de español?\nSoy profesor. Me llamo Daniel.\nÉsta es Elena. Es médica y también es estudiante de español. Es alemana.`,
         l3: `Me llamo Li Hua. Soy de China, de Beijing. Soy médica.\nMe llamo Ana. Soy de Bolivia, de La Paz. Soy abogada.\nÉl es Juan. Es de Argentina, de Buenos Aires. Es gerente.\nEllos son Mario y Cecilia. Son de Venezuela, de Caracas. Son funcionarios.\n¿Qué tal? Bien, ¿y tú? Muy bien, gracias. Mira, Marcos, unos amigos. Ésta es Lucía. Encantado. Yo soy Marcos, soy alemán, de Berlín. ¿De dónde eres? Soy italiana, de Roma. Éste es Julio, es francés, de París.`,
@@ -286,7 +288,8 @@
         l5: `Ésta es mi casa. En ella hay una sala, una cocina, un cuarto de baño y tres habitaciones.\nLa sala es pequeña, pero está muy limpia. En ella hay un televisor, una lámpara y dos sofás.\nÉse es el dormitorio de nuestro hijo Manolo. El dormitorio no está muy ordenado.\nAquél es nuestro estudio. En él hay cuatro estanterías. En las estanterías hay muchos libros y revistas interesantes.\nYa estamos! ¡Mi nueva casa! Es muy grande! Sí, es bastante grande, tiene dos plantas y un jardín. Qué bonitas son las flores!`,
         l6: `¿Qué día es hoy? Hoy es lunes. ¿Qué día es mañana? Mañana es martes.\n¿A cuántos estamos? Estamos a siete de julio.\n¿A cuántos estamos hoy? Hoy estamos a veintidós de julio.\n¿Qué hora es? Es la una en punto. Son las tres y cinco. ¿Tienes hora? Es la una y media. ¿Tiene hora? Son las cuatro menos cuarto.\nHoy estamos a veintisiete de octubre. ¿Qué hora tienes? No tengo reloj. Son las tres y cuarto, y a las tres y media es la clase de conversación.`,
         l7: `¿Qué tiempo hace hoy? Hoy hace buen tiempo. ¿Qué tiempo hace mañana? Mañana hace mucho viento.\n¿Llueve mucho en China? En el Norte no. Ahí nieva mucho en invierno. En el Sur sí, en verano, llueve mucho.\n¿Hace mucho calor en verano en Beijing? Sí, hace mucho calor.\nEl invierno de Beijing es muy frío.\n¡Qué calor hace hoy! ¿verdad? ¡Claro! Estamos en verano.\nAquí, en Madrid, hace mucho calor en verano y mucho frío en invierno. Allí el clima es más suave; además, llueve mucho.`,
-        l8: `¿Adónde vas? Voy a correos. Y tú, ¿también? No, voy al mercado.\n¿Vas al banco? No, voy al supermercado. ¿Y tú? Voy a la tienda.\n¿Qué vas a hacer este fin de semana? Voy al cine. Yo también.\n¿De dónde vienes? Vengo de casa de José. Está enfermo.\nVoy a la oficina a trabajar.\nMañana es mi cumpleaños y voy a dar una fiesta, a las nueve. ¿Puedes venir? Por supuesto.\nNo. Tengo mucho trabajo en casa. Voy a ordenar las habitaciones y después voy a comprar bebidas y comida. Yo tampoco.`
+        l8: `¿Adónde vas? Voy a correos. Y tú, ¿también? No, voy al mercado.\n¿Vas al banco? No, voy al supermercado. ¿Y tú? Voy a la tienda.\n¿Qué vas a hacer este fin de semana? Voy al cine. Yo también.\n¿De dónde vienes? Vengo de casa de José. Está enfermo.\nVoy a la oficina a trabajar.\nMañana es mi cumpleaños y voy a dar una fiesta, a las nueve. ¿Puedes venir? Por supuesto.\nNo. Tengo mucho trabajo en casa. Voy a ordenar las habitaciones y después voy a comprar bebidas y comida. Yo tampoco.`,
+        l9: `Estas son fotos de mi familia. Somos nueve: mis abuelos, mis padres, mis tíos, mi primo, mi hermana y yo.\nMi abuelo tiene setenta y un años; mi abuela, sesenta y nueve. Son muy amables.\nMi padre trabaja en una empresa. Tiene cuarenta y siete años. Es alto, guapo y alegre. Mi madre tiene cuarenta y dos años. No trabaja. Cuida la casa.\nMi tío es un hombre muy simpático. Tiene cuarenta y cinco años. La mujer morena es mi tía. Es profesora.\nMi primo tiene ocho años. Estudia en una escuela.\nEsta chica es mi hermana. Tiene doce años. Ella también va a la escuela.\n¡Hola, Susana! ¡Qué sorpresa! ¿Tú también estudias chino?\nSí, trabajo en una empresa sino-española y necesito este idioma para mi trabajo.\n¿Hablas varios idiomas? Inglés y un poco de francés.\n¿En qué clase estás? Estoy en el nivel elemental. En el aula cuatro.\n¿A qué hora empieza la clase? A las nueve en punto. A las diez y media hay un recreo. Durante el recreo tomamos un café o charlamos con los compañeros.\n¡Muy bien! Entonces, hasta luego. Adiós.`
     };
 
     // ─────────── 初始化语音识别 ───────────
@@ -464,6 +467,19 @@
         if (text.includes('estamos a')) {
             tips += '⚠️ 日期格式：estamos a + 数字 + de + 月份，月份首字母小写！\n';
         }
+        // 第九课
+        if (text.includes('empieza') || text.includes('empezar')) {
+            tips += '⚠️ empezar（开始）是不规则动词 e→ie：empiezo, empiezas, empieza, empezamos, empezáis, empiezan。\n';
+        }
+        if (text.includes('conmigo') || text.includes('contigo')) {
+            tips += '💡 con + yo → conmigo；con + tú → contigo。其他不变：con él, con nosotros。\n';
+        }
+        if (text.includes('mucho') || text.includes('poco') || text.includes('un poco')) {
+            tips += '💡 mucho/poco 可作形容词、副词、代词。un poco (de) 表示"一点点"。\n';
+        }
+        if (text.includes('termina') || text.includes('terminar')) {
+            tips += '⚠️ terminar 是规则 -ar 动词变位。及物/不及物取决于是否带直接宾语。\n';
+        }
 
         tipsBox.innerText = (tips === '【实时拼写保镖提醒】：\n')
             ? '✨ 暂未触发重点地雷词，拼写看起来很工整，继续保持！'
@@ -536,6 +552,41 @@
         // 城市/国家
         'berlin':   'Berlín',
         'paris':    'París',
+        // 第九课新增
+        'abuelo':   'abuelo',    // 无重音
+        'abuela':   'abuela',    // 无重音
+        'tio':      'tío',
+        'tia':      'tía',
+        'tios':     'tíos',
+        'tias':     'tías',
+        'moreno':   'moreno',    // 无重音
+        'morena':   'morena',
+        'simpatico': 'simpático',
+        'simpatica': 'simpática',
+        'empresa':  'empresa',   // 无重音
+        'sorpresa': 'sorpresa',  // 无重音
+        'necesito': 'necesito',  // 无重音
+        'idioma':   'idioma',    // 无重音
+        'nivel':    'nivel',     // 无重音
+        'elemental':'elemental', // 无重音
+        'aula':     'aula',      // 无重音
+        'empieza':  'empieza',   // 无重音
+        'recreo':   'recreo',    // 无重音
+        'charlar':  'charlar',   // 无重音
+        'charlamos':'charlamos', // 无重音
+        'terminar': 'terminar',  // 无重音
+        'termina':  'termina',   // 无重音
+        'cuidar':   'cuidar',    // 无重音
+        'cuida':    'cuida',     // 无重音
+        'hermana':  'hermana',   // 无重音
+        'hermano':  'hermano',   // 无重音
+        'primo':    'primo',     // 无重音
+        'prima':    'prima',     // 无重音
+        'foto':     'foto',      // 无重音
+        'fotos':    'fotos',     // 无重音
+        'familia':  'familia',   // 无重音
+        'adios':    'adiós',
+        'hasta luego': 'hasta luego',
     };
 
     function autoCorrect(text) {
